@@ -7,6 +7,8 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var daySentenceRouter = require('./routes/daySentence');
+var adminRouter  = require('./routes/admin');
+const { sequelize } = require('./models');
 
 var app = express();
 
@@ -22,6 +24,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/admin', adminRouter);
 app.use('/daySentence', daySentenceRouter);
 
 // catch 404 and forward to error handler
@@ -39,5 +42,10 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+// 数据库同步
+sequelize.sync({ alter: true })
+  .then(() => console.log('数据库已同步'))
+  .catch(err => console.error('数据库同步失败:', err));
 
 module.exports = app;
