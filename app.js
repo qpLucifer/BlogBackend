@@ -1,16 +1,18 @@
-var createError = require('http-errors');
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-
-var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var daySentenceRouter = require('./routes/daySentence');
-var adminRouter  = require('./routes/admin');
+let createError = require('http-errors');
+let express = require('express');
+let path = require('path');
+let cookieParser = require('cookie-parser');
+let logger = require('morgan');
+// app.js or server.js
+require('dotenv').config();
+let indexRouter = require('./routes/index');
+let usersRouter = require('./routes/users');
+let daySentenceRouter = require('./routes/daySentence');
+let adminRouter  = require('./routes/admin');
+let auth = require('./routes/auth');
 const { sequelize } = require('./models');
 
-var app = express();
+let app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -22,11 +24,21 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
+app.use('/', auth);
 app.use('/users', usersRouter);
+// app.use('/login', auth);
 app.use('/admin', adminRouter);
 app.use('/daySentence', daySentenceRouter);
-
+// 处理跨域请求
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*'); // 允许所有来源
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS'); // 允许的请求方法
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // 允许的请求头
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204); // 对于预检请求，直接返回204状态码
+  }
+  next();
+});
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
@@ -48,4 +60,6 @@ sequelize.sync({ alter: true })
   .then(() => console.log('数据库已同步'))
   .catch(err => console.error('数据库同步失败:', err));
 
+// 初始化角色和权限
+require('./utils/initRoles')();
 module.exports = app;

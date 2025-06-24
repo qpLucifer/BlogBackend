@@ -1,54 +1,54 @@
-var express = require('express');
-var router = express.Router();
-const { getList, addSentence, updateSentence, deleteSentence } = require('../dataBase/api')
+const express = require('express');
+const router = express.Router();
+const authenticate = require('../middleware/auth');
+const { checkPermission, checkRole } = require('../middleware/permissions');
+const { BlogSentence } = require('../models/blogSentence');
 
+// 需要认证
+router.use(authenticate);
 
-router.get('/', function (req, res, next) {
-    res.send('respond with a resource');
-});
-// 获取每日一句
-router.get('/list', function (req, res, next) {
-    getList().then(data => {
-        // 如果没有数据，返回空数组
-        if (!data || data.length === 0) {
-            return res.status(200).json([]);
-        }
-        // 返回查询结果
-        res.status(200).json(data);
-    }).catch(err => {
-        // 处理错误
-        console.error(err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    });
+// 需要管理员角色或特定权限
+router.use(checkRole('admin')); // 或者使用 checkPermission('user:write')
+
+// 获取每日一句列表
+router.get('/list', async (req, res) => {
+    try {
+        const sentences = await BlogSentence.findAll({
+            attributes: ['id', 'auth', 'day_sentence'],
+            order: [['id', 'DESC']] // 按照 ID 降序排列
+        });
+        res.status(200).json(sentences);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: '获取每日一句列表失败' });
+    }
 });
 
 // 添加每日一句
-router.post('/add', function (req, res, next) {
-    // 从请求体中获取 daySentence 和 auth 字段
+router.post('/add', async (req, res) => {
     const { daySentence, auth } = req.body;
-    // 检查请求体中是否包含 sentence 字段
     if (!auth) {
         return res.status(400).json({ error: 'auth is required' });
     }
     if (!daySentence) {
         return res.status(400).json({ error: 'Sentence is required' });
     }
-
-    // 假设有一个函数 addSentence 来添加每日一句
-    addSentence(daySentence, auth).then(() => {
-        res.status(200).json({ message: 'Day Sentence added successfully' });
-    }).catch(err => {
-        console.error(err);
+    try {
+        const newSentence = await BlogSentence.create({
+            day_sentence: daySentence,
+            auth: auth
+        });
+        res.status(201).json({ message: 'Day Sentence added successfully', id: newSentence.id });
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
-    });
+    }
 });
 
 // 更新每日一句
-router.put('/update', function (req, res, next) {
-    // 从请求体中获取 id, daySentence 和 auth 字段
+router.put('/update', async (req, res) => { 
     const { id, daySentence, auth } = req.body;
-    // 检查请求体中是否包含 id 字段
-    if (!id) {
+    if (!id) {  
         return res.status(400).json({ error: 'id is required' });
     }
     if (!auth) {
@@ -57,45 +57,38 @@ router.put('/update', function (req, res, next) {
     if (!daySentence) {
         return res.status(400).json({ error: 'Sentence is required' });
     }
-    updateSentence(id, daySentence, auth).then(() => {
+    try {
+        const sentence = await BlogSentence.findByPk(id);
+        if (!sentence) {
+            return res.status(404).json({ error: 'Sentence not found' });
+        }
+        sentence.day_sentence = daySentence;
+        sentence.auth = auth;
+        await sentence.save();  
         res.status(200).json({ message: 'Day Sentence updated successfully' });
-    }).catch(err => {
-        console.error(err);
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
-    });
-});
-
-
-// 删除每日一句
-router.delete('/delete', function (req, res, next) {
-    // 从请求体中获取 id 字段
-    const { id } = req.body;
-    // 检查请求体中是否包含 id 字段
-    if (!id) {
-        return res.status(400).json({ error: 'id is required' });
     }
-    deleteSentence(id).then(() => {
-        res.status(200).json({ message: 'Day Sentence deleted successfully' });
-    }).catch(err => {
-        console.error(err);
-        res.status(500).json({ error: 'Internal Server Error' });
-    });
 });
 
 // 删除每日一句
-router.delete('/delete/:id', function (req, res, next) {
-    // 从请求参数中获取 id 字段
+router.delete('/delete/:id', async (req, res) => {
     const { id } = req.params;
-    // 检查请求参数中是否包含 id 字段
     if (!id) {
         return res.status(400).json({ error: 'id is required' });
     }
-    deleteSentence(id).then(() => {
+    try {
+        const sentence = await BlogSentence.findByPk(id);
+        if (!sentence) {
+            return res.status(404).json({ error: 'Sentence not found' });
+        }
+        await sentence.destroy();
         res.status(200).json({ message: 'Day Sentence deleted successfully' });
-    }).catch(err => {
-        console.error(err);
+    } catch (error) {
+        console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
-    });
+    }
 });
 
 module.exports = router;
