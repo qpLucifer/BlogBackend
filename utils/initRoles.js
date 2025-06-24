@@ -1,6 +1,6 @@
 // utils/initRoles.js - 初始化角色和权限
 module.exports = async function() {
-  const { Role, Permission, UserRole } = require('../models/admin');
+  const { Role, Permission, UserRole, User } = require('../models/admin');
   const { registerUser } = require('./auth');
   
   try {
@@ -39,18 +39,17 @@ module.exports = async function() {
     await registerUser('user', '123456'); // 普通用户  
 
     // 分配角色给用户
-    const adminUser = await UserRole.findOne({ where: { user_id: 1 } });
-    const editorUser = await UserRole.findOne({ where: { user_id: 2 } });
-    const normalUser = await UserRole.findOne({ where: { user_id: 3 } });
-    // 如果用户不存在则创建
-    if (!adminUser) {
-      await UserRole.create({ user_id: 1, role_id: adminRole.id });
+    const adminUser = await User.findOne({ where: { username: 'admin' } });
+    const editorUser = await User.findOne({ where: { username: 'editor' } });
+    const normalUser = await User.findOne({ where: { username: 'user' } });
+    if (adminUser) {
+      await adminUser.addRole(adminRole);
     }
-    if (!editorUser) {
-      await UserRole.create({ user_id: 2, role_id: editorRole.id });
+    if (editorUser) {
+      await editorUser.addRole(editorRole);
     }
-    if (!normalUser) {
-      await UserRole.create({ user_id: 3, role_id: userRole.id });
+    if (normalUser) {
+      await normalUser.addRole(userRole);
     }
     
     // 分配权限

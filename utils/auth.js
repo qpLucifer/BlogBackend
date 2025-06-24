@@ -30,6 +30,13 @@ const generateToken = (user) => {
 
 // 用户注册
 const registerUser = async (username, password) => {
+  // 注册前校验
+  if (!/^[a-zA-Z0-9_]{3,16}$/.test(username)) {
+    throw new Error('用户名格式不正确，需3-16位字母、数字或下划线');
+  }
+  if (password.length < 6) {
+    throw new Error('密码长度不能小于6位');
+  }
   const hashedPassword = await hashPassword(password);
   return User.create({ 
     username, 
@@ -47,15 +54,8 @@ const loginUser = async (username, password) => {
       through: { attributes: [] }
     }]
   });
-  
-  if (!user) {
-    throw new Error('用户不存在');
-  }
-  
-  const isValid = await validatePassword(password, user.password_hash);
-  
-  if (!isValid) {
-    throw new Error('密码错误');
+  if (!user || !(await validatePassword(password, user.password_hash))) {
+    throw new Error('用户名或密码错误');
   }
   
   // if (!user.is_active) {
