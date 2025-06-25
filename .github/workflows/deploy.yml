@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        working-directory: ./BlogBackend
+        # working-directory: ./BlogBackend
 
       - name: Copy files to server
         uses: appleboy/scp-action@v0.1.7
