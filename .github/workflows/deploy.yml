@@ -28,7 +28,8 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "package.json,package-lock.json,public/*,app.js,bin/*,routes/*,models/*,middlewares/*,utils/*,views/*"
+          source: "."  # 复制当前目录下的所有文件
+          # source: "package.json,package-lock.json,public/*,app.js,bin/*,routes/*,models/*,middlewares/*,utils/*,views/*"
           target: ${{ secrets.TARGET_DIR }}  # 服务器目标路径
           strip_components: 1  # 如果需要，可以根据实际情况调整
 
