@@ -28,7 +28,7 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "../../../BlogBackend/*"
+          source: "package.json,package-lock.json,public/,app.js"
           target: ${{ secrets.TARGET_DIR }}  # 服务器目标路径
 
       # - name: SSH and restart pm2
