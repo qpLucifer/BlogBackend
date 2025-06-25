@@ -29,7 +29,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "BlogBackend/*"
-          target: "/your/server/path/BlogBackend"  # 服务器目标路径
+          target: ${{ secrets.TARGET_DIR }}  # 服务器目标路径
 
       - name: SSH and restart pm2
         uses: appleboy/ssh-action@v1.0.3
@@ -38,6 +38,6 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            cd /your/server/path/BlogBackend
+            cd ${{ secrets.TARGET_DIR }}
             npm install --production
             pm2 reload blog-backend || pm2 start bin/www --name blog-backend
