@@ -3,9 +3,9 @@ const { Sequelize } = require('sequelize');
 
 // 明确指定方言（修复 Sequelize v4+ 问题）
 const dialect = process.env.DB_DIALECT || 'mysql';
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
+const sequelize = new Sequelize('blogDb', 'blog_user', '7jWW2waA74yZpGEx', {
+  host: '39.104.13.43',
+  port: '3306',
   dialect: dialect,
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
