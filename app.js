@@ -10,6 +10,7 @@ let usersRouter = require('./routes/users');
 let daySentenceRouter = require('./routes/daySentence');
 let adminRouter  = require('./routes/admin');
 let auth = require('./routes/auth');
+let menuRouter = require('./routes/menu');
 const { sequelize } = require('./models');
 const cors = require('cors');
 
@@ -34,6 +35,7 @@ app.use('/users', usersRouter);
 // app.use('/login', auth);
 app.use('/admin', adminRouter);
 app.use('/daySentence', daySentenceRouter);
+app.use('/menu', menuRouter);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

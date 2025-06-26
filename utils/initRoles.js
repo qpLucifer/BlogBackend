@@ -1,6 +1,6 @@
 // utils/initRoles.js - 初始化角色和权限
 module.exports = async function() {
-  const { Role, Permission, UserRole, User } = require('../models/admin');
+  const { Role, Permission, UserRole, User, Menu } = require('../models/admin');
   const { registerUser } = require('./auth');
   
   try {
@@ -60,6 +60,17 @@ module.exports = async function() {
     await userRole.addPermissions(permissions.filter(p => 
       p.name === 'content:read' || p.name === 'user:read'
     ));
+    
+    // 创建菜单
+    const menus = await Menu.bulkCreate([
+      { name: '首页', path: '/dashboard', icon: 'dashboard', order: 1 },
+      { name: '用户管理', path: '/users', icon: 'user', order: 2 },
+      { name: '角色管理', path: '/roles', icon: 'team', order: 3 },
+      { name: '菜单管理', path: '/menu', icon: 'menu', order: 4 }
+    ]);
+    
+    // 分配菜单给admin角色
+    await adminRole.setMenus(menus);
     
     console.log('角色和权限初始化完成');
   } catch (error) {

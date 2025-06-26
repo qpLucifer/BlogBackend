@@ -58,4 +58,32 @@ Role.belongsToMany(User, { through: UserRole, foreignKey: 'role_id' });
 Role.belongsToMany(Permission, { through: RolePermission, foreignKey: 'role_id' });
 Permission.belongsToMany(Role, { through: RolePermission, foreignKey: 'permission_id' });
 
-module.exports = { User, Role, Permission, UserRole, RolePermission };
+// 定义菜单模型
+const Menu = sequelize.define('Menu', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  name: { type: DataTypes.STRING(50), allowNull: false },
+  path: { type: DataTypes.STRING(255), allowNull: false },
+  icon: { type: DataTypes.STRING(100) },
+  parent_id: { type: DataTypes.INTEGER, allowNull: true }, // 父菜单ID
+  order: { type: DataTypes.INTEGER, defaultValue: 0 },
+  hidden: { type: DataTypes.BOOLEAN, defaultValue: false }
+}, {
+  tableName: 'blog_menus',
+  timestamps: false,
+  underscored: true
+});
+
+// 菜单与角色多对多关系
+const RoleMenu = sequelize.define('RoleMenu', {
+  role_id: DataTypes.INTEGER,
+  menu_id: DataTypes.INTEGER
+}, {
+  tableName: 'blog_role_menus',
+  timestamps: false
+});
+
+// 设置关联
+Role.belongsToMany(Menu, { through: RoleMenu, foreignKey: 'role_id' });
+Menu.belongsToMany(Role, { through: RoleMenu, foreignKey: 'menu_id' });
+
+module.exports = { User, Role, Permission, UserRole, RolePermission, Menu, RoleMenu };
