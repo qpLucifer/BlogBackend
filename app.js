@@ -27,7 +27,26 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*'
+  origin: function (origin, callback) {
+    // 允许没有 origin 的请求（比如同源请求）
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
+      'http://localhost:3001',  // React 开发服务器
+      'http://localhost:3000',  // 如果前端也在 3000 端口
+      process.env.CORS_ORIGIN   // 环境变量中的域名
+    ].filter(Boolean);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS 阻止了来自以下地址的请求:', origin);
+      callback(new Error('不允许的 CORS 来源'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use('/', auth);
