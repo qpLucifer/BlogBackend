@@ -3,8 +3,9 @@ let express = require('express');
 let path = require('path');
 let cookieParser = require('cookie-parser');
 let logger = require('morgan');
-// app.js or server.js
+// 加载环境变量
 require('dotenv').config();
+
 let indexRouter = require('./routes/index');
 let usersRouter = require('./routes/users');
 let daySentenceRouter = require('./routes/daySentence');
