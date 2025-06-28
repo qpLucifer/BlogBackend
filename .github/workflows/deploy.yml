@@ -26,17 +26,17 @@ jobs:
       - name: Create .env file
         run: |
           cat <<EOF > .env
-          echo "DB_DIALECT=mysql" > .env
-          echo "DB_HOST=${{ secrets.SERVER_IP }}" >> .env
-          echo "DB_PORT=3306" >> .env
-          echo "DB_NAME=blogDb" >> .env
-          echo "DB_USER=blog_user" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "PORT=3000" >> .env
-          echo "NODE_ENV=production" >> .env
-          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-          echo "JWT_EXPIRES_IN=1d" >> .env
-          echo "CORS_ORIGIN=http://localhost:3001" >> .env
+          DB_DIALECT=mysql" > .env
+          DB_HOST=${{ secrets.SERVER_IP }} >> .env
+          DB_PORT=3306 >> .env
+          DB_NAME=blogDb >> .env
+          DB_USER=blog_user >> .env
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env
+          PORT=3000 >> .env
+          NODE_ENV=production >> .env
+          JWT_SECRET=${{ secrets.JWT_SECRET }} >> .env
+          JWT_EXPIRES_IN=1d >> .env
+          CORS_ORIGIN=http://localhost:3001 >> .env
           EOF
         shell: bash
 
