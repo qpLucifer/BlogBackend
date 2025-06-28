@@ -20,25 +20,6 @@ jobs:
 
       - name: Install dependencies
         run: npm install
-        # working-directory: ./BlogBackend
-
-
-      - name: Create .env file
-        run: |
-          cat <<EOF > .env
-          DB_DIALECT=mysql
-          DB_HOST=${{ secrets.SERVER_IP }}
-          DB_PORT=3306
-          DB_NAME=blogDb
-          DB_USER=blog_user
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          PORT=3000
-          NODE_ENV=production
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          JWT_EXPIRES_IN=1d
-          CORS_ORIGIN=http://localhost:3001
-          EOF
-        shell: bash
 
       - name: Copy files to server
         uses: appleboy/scp-action@master
@@ -46,12 +27,11 @@ jobs:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."  # 复制当前目录下的所有文件
-          # source: "package.json,package-lock.json,public/*,app.js,bin/*,routes/*,models/*,middlewares/*,utils/*,views/*"
-          target: ${{ secrets.TARGET_DIR }}  # 服务器目标路径
-          strip_components: 1  # 如果需要，可以根据实际情况调整
+          source: "."
+          target: ${{ secrets.TARGET_DIR }}
+          strip_components: 0
 
-      - name: SSH and restart pm2
+      - name: SSH and setup environment
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -59,5 +39,31 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ${{ secrets.TARGET_DIR }}
+            
+            # 创建.env文件
+            cat > .env << 'EOF'
+            DB_DIALECT=mysql
+            DB_HOST=${{ secrets.SERVER_IP }}
+            DB_PORT=3306
+            DB_NAME=blogDb
+            DB_USER=blog_user
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            PORT=3000
+            NODE_ENV=production
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRES_IN=1d
+            CORS_ORIGIN=${{ secrets.FRONTEND_URL }}
+            EOF
+            
+            # 设置文件权限
+            chmod 600 .env
+            
+            # 安装依赖
             npm install --production
+            
+            # 重启服务
             pm2 reload blog || pm2 start bin/www --name blog
+            
+            # 检查环境变量
+            echo "=== 检查环境变量 ==="
+            node -e "require('dotenv').config(); console.log('JWT_SECRET:', process.env.JWT_SECRET ? '已设置' : '未设置'); console.log('DB_HOST:', process.env.DB_HOST); console.log('NODE_ENV:', process.env.NODE_ENV);"
