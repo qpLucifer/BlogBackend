@@ -2,9 +2,9 @@
 require('dotenv').config();
 
 console.log('=== 测试环境变量 ===');
-console.log('JWT_SECRET: ', process.env.JWT_SECRET);
-console.log('DB_HOST: ', process.env.DB_HOST);
-console.log('NODE_ENV: ', process.env.NODE_ENV);
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
+console.log('DB_HOST:', process.env.DB_HOST);
+console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('===================');
 
 // 检查.env文件内容
