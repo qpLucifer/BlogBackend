@@ -15,7 +15,7 @@ router.use(checkRole('admin')); // 或者使用 checkPermission('user:write')
 router.get('/users', async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ['id', 'username', 'is_active', 'created_at'],
+      attributes: ['id', 'username', 'created_at'],
       include: [{
         model: Role,
         attributes: ['id', 'name'],
