@@ -3,7 +3,7 @@ const { sequelize } = require('./index');
 const { DataTypes } = require('sequelize');
 const BlogSentence = sequelize.define('blogSentence', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  auth: { type: DataTypes.STRING(255), unique: true, allowNull: false },
+  auth: { type: DataTypes.STRING(255), allowNull: false },
   day_sentence: { type: DataTypes.STRING(255), allowNull: false },
 }, {
   tableName: 'blog_sentence',

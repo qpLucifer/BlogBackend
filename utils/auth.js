@@ -29,7 +29,7 @@ const generateToken = (user) => {
 };
 
 // 用户注册
-const registerUser = async (username, password) => {
+const registerUser = async (username, password, email, is_active) => {
   // 注册前校验
   if (!/^[a-zA-Z0-9_]{3,16}$/.test(username)) {
     throw new Error('用户名格式不正确，需3-16位字母、数字或下划线');
@@ -40,7 +40,9 @@ const registerUser = async (username, password) => {
   const hashedPassword = await hashPassword(password);
   return User.create({ 
     username, 
-    password_hash: hashedPassword 
+    password_hash: hashedPassword,
+    email,
+    is_active
   });
 };
 
