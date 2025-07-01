@@ -54,15 +54,15 @@ const registerUser = async (username, password, email, is_active, role_ids=[]) =
     email,
     is_active
   });
+  const addedUser = await User.findOne({ where: { username } });
   // 关联角色
-  await user.addRole(roles);
-  console.log(user,"user");
+  await addedUser.addRoles(roles);
   return {
     token: generateToken(user),
     user: {
       id: user.id,
       username: user.username,
-      roles: user.Roles.map(role => role.name)
+      roles: roles.map(role => role.name)
     }
   };
 };
@@ -74,7 +74,8 @@ const loginUser = async (username, password) => {
     include: [{
       model: Role,
       attributes: ['id', 'name'],
-      through: { attributes: [] }
+      through: { attributes: [] },
+      as: "roles"
     }]
   });
   if (!user || !(await validatePassword(password, user.password_hash))) {
@@ -89,7 +90,7 @@ const loginUser = async (username, password) => {
     user: {
       id: user.id,
       username: user.username,
-      roles: user.Roles.map(role => role.name)
+      roles: user.roles.map(role => role.name)
     }
   };
 };

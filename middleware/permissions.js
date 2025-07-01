@@ -29,17 +29,17 @@ const checkPermission = (permissionName) => {
 const checkRole = (roleName) => {
   return async (req, res, next) => {
     try {
-      if (!req.user || !req.user.Roles) {
+      if (!req.user || !req.user.roles) {
         return res.status(401).json({ error: '用户未认证' });
       }
       
-      const hasRole = req.user.Roles.some(role => role.name === roleName);
+      const hasRole = req.user.roles.some(role => role.name === roleName);
       
       if (!hasRole) {
         return res.status(403).json({ 
           error: '角色权限不足',
           required: roleName,
-          current: req.user.Roles.map(r => r.name)
+          current: req.user.roles.map(r => r.name)
         });
       }
       

@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkPermission, checkRole } = require('../middleware/permissions');
-const { User, Role } = require('../models/admin');
+const { User, Role, Permission } = require('../models/admin');
 
 // 需要认证
 router.use(authenticate);
@@ -19,7 +19,8 @@ router.get('/users', async (req, res) => {
       include: [{
         model: Role,
         attributes: ['id', 'name'],
-        through: { attributes: [] }
+        through: { attributes: [] },
+        as:"roles"
       }]
     });
     
@@ -35,10 +36,12 @@ router.get('/roles', async (req, res) => {
     const roles = await Role.findAll({
       include: [{
         model: Permission,
-        attributes: ['id', 'name'],
-        through: { attributes: [] }
+        attributes: ['id', 'name', 'description'],
+        through: { attributes: [] },
+        as: "permissions",
       }]
     });
+    
     res.json(roles);
   } catch (error) {
     res.status(500).json({ error: '获取角色列表失败' });

@@ -55,9 +55,9 @@ const UserRole = sequelize.define('UserRole', {
   });
 
 // 设置关联
-User.belongsToMany(Role, { through: UserRole, foreignKey: 'user_id' });
+User.belongsToMany(Role, { through: UserRole, foreignKey: 'user_id', as:"roles" });
 Role.belongsToMany(User, { through: UserRole, foreignKey: 'role_id' });
-Role.belongsToMany(Permission, { through: RolePermission, foreignKey: 'role_id' });
+Role.belongsToMany(Permission, { through: RolePermission, foreignKey: 'role_id', as:"permissions" });
 Permission.belongsToMany(Role, { through: RolePermission, foreignKey: 'permission_id' });
 
 // 定义菜单模型

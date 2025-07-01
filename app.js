@@ -50,12 +50,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use('/', auth);
-app.use('/users', usersRouter);
+app.use('/api/', auth);
+app.use('/api/users', usersRouter);
 // app.use('/login', auth);
-app.use('/admin', adminRouter);
-app.use('/daySentence', daySentenceRouter);
-app.use('/menu', menuRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/daySentence', daySentenceRouter);
+app.use('/api/menu', menuRouter);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

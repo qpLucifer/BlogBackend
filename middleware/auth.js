@@ -19,15 +19,17 @@ const authenticate = async (req, res, next) => {
     
     // 查找用户并附加到请求对象
     const user = await User.findByPk(decoded.id, {
-      attributes: ['id', 'username'],
+      attributes: ['id', 'username', 'is_active'],
       include: [{
         model: Role,
         attributes: ['id', 'name'],
         through: { attributes: [] },
+        as:"roles",
         include: [{
           model: Permission,
           attributes: ['id', 'name'],
-          through: { attributes: [] }
+          through: { attributes: [] },
+          as:"permissions"
         }]
       }]
     });
@@ -36,18 +38,17 @@ const authenticate = async (req, res, next) => {
       return res.status(401).json({ error: '无效用户' });
     }
     
-    // if (!user.is_active) {
-    //   return res.status(403).json({ error: '用户账户已被禁用' });
-    // }
+    if (!user.is_active) {
+      return res.status(403).json({ error: '用户账户已被禁用' });
+    }
     
     // 将用户权限扁平化处理
     const permissions = new Set();
-    user.Roles.forEach(role => {
-      role.Permissions.forEach(permission => {
+    user.roles.forEach(role => {
+      role.permissions.forEach(permission => {
         permissions.add(permission.name);
       });
     });
-    
     req.user = {
       ...user.get({ plain: true }),
       permissions: Array.from(permissions)

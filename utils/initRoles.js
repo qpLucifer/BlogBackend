@@ -34,9 +34,9 @@ module.exports = async function() {
     });
 
     // 创建用户
-    await registerUser('admin', '123456', 'admin@example.com', true); // 管理员用户
-    await registerUser('editor', '123456', 'editor@example.com', true); // 编辑用户
-    await registerUser('user', '123456', 'user@example.com', true); // 普通用户  
+    await registerUser('admin', '123456', 'admin@example.com', true, [adminRole.id]); // 管理员用户
+    await registerUser('editor', '123456', 'editor@example.com', true, [editorRole.id]); // 编辑用户
+    await registerUser('user', '123456', 'user@example.com', true, [userRole.id]); // 普通用户  
 
     // 分配角色给用户
     const adminUser = await User.findOne({ where: { username: 'admin' } });
