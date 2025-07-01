@@ -6,8 +6,8 @@ const { registerUser, loginUser } = require('../utils/auth');
 // 用户注册
 router.post('/register', async (req, res) => {
   try {
-    const { username, password, email, is_active, role_ids } = req.body;
-    const result = await registerUser(username, password, email, is_active, role_ids);
+    const { username, password, email, is_active, roles } = req.body;
+    const result = await registerUser(username, password, email, is_active, roles);
     res.status(201).json(result);
   } catch (error) {
     res.status(400).json({ error: error.message });
