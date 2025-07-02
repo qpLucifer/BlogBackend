@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { User } = require('../models/admin');
 const { Role } = require('../models/admin');
+const { Permission } = require('../models/admin');
 
 // 密码加密
 const hashPassword = async (password) => {
@@ -75,7 +76,13 @@ const loginUser = async (username, password) => {
       model: Role,
       attributes: ['id', 'name'],
       through: { attributes: [] },
-      as: "roles"
+      as: "roles",
+      include: [{
+        model: Permission,
+        attributes: ['id', 'name'],
+        through: { attributes: [] },
+        as: "permissions"
+      }]
     }]
   });
   if (!user || !(await validatePassword(password, user.password_hash))) {
@@ -90,7 +97,14 @@ const loginUser = async (username, password) => {
     user: {
       id: user.id,
       username: user.username,
-      roles: user.roles.map(role => role.name)
+      roles: user.roles.map(role => role.name),
+      permissions: user.roles.reduce((acc, role) => acc.concat(role.permissions.map(permission => permission.name)), []),
+      email: user.email,
+      is_active: user.is_active,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
+      signature: user.signature,
+      mood: user.mood,
     }
   };
 };
