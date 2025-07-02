@@ -6,8 +6,6 @@ let logger = require('morgan');
 // 加载环境变量
 require('dotenv').config();
 
-let indexRouter = require('./routes/index');
-let usersRouter = require('./routes/users');
 let daySentenceRouter = require('./routes/daySentence');
 let adminRouter  = require('./routes/admin');
 let auth = require('./routes/auth');
@@ -51,7 +49,7 @@ app.use(cors({
 }));
 
 app.use('/api/', auth);
-app.use('/api/users', usersRouter);
+// app.use('/api/users', usersRouter);
 // app.use('/login', auth);
 app.use('/api/admin', adminRouter);
 app.use('/api/daySentence', daySentenceRouter);
