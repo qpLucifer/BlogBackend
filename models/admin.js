@@ -9,8 +9,8 @@ const User = sequelize.define('User', {
   password_hash: { type: DataTypes.STRING(100), allowNull: false },
   email: { type: DataTypes.STRING(100), allowNull: false },
   is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
-  mood: { type: DataTypes.STRING(255), allowNull: false },
-  signature: { type: DataTypes.STRING(255), allowNull: false },
+  mood: { type: DataTypes.STRING(255), allowNull: true },
+  signature: { type: DataTypes.STRING(255), allowNull: true },
 }, {
   tableName: 'blog_users',
   timestamps: true,
@@ -87,7 +87,7 @@ const RoleMenu = sequelize.define('RoleMenu', {
 });
 
 // 设置关联
-Role.belongsToMany(Menu, { through: RoleMenu, foreignKey: 'role_id' });
+Role.belongsToMany(Menu, { through: RoleMenu, foreignKey: 'role_id', as: "menus" });
 Menu.belongsToMany(Role, { through: RoleMenu, foreignKey: 'menu_id' });
 
 module.exports = { User, Role, Permission, UserRole, RolePermission, Menu, RoleMenu };

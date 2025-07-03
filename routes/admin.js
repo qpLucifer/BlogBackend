@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkPermission, checkRole } = require('../middleware/permissions');
-const { User, Role, Permission } = require('../models/admin');
+const { User, Role, Permission, Menu } = require('../models/admin');
 
 // 需要认证
 router.use(authenticate);
@@ -86,6 +86,11 @@ router.get('/roles', async (req, res) => {
         attributes: ['id', 'name', 'description'],
         through: { attributes: [] },
         as: "permissions",
+      },{
+        model: Menu,
+        attributes: ['id', 'name', 'path'],
+        through: { attributes: [] },
+        as: "menus",  
       }]
     });
     
