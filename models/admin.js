@@ -90,4 +90,20 @@ const RoleMenu = sequelize.define('RoleMenu', {
 Role.belongsToMany(Menu, { through: RoleMenu, foreignKey: 'role_id', as: "menus" });
 Menu.belongsToMany(Role, { through: RoleMenu, foreignKey: 'menu_id' });
 
-module.exports = { User, Role, Permission, UserRole, RolePermission, Menu, RoleMenu };
+// 角色-菜单-权限表
+const RoleMenuPermission = sequelize.define('RoleMenuPermission', {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  role_id: { type: DataTypes.INTEGER, allowNull: false },
+  menu_id: { type: DataTypes.INTEGER, allowNull: false },
+  can_create: { type: DataTypes.BOOLEAN, defaultValue: false },
+  can_read: { type: DataTypes.BOOLEAN, defaultValue: false },
+  can_update: { type: DataTypes.BOOLEAN, defaultValue: false },
+  can_delete: { type: DataTypes.BOOLEAN, defaultValue: false }
+}, {
+  tableName: 'blog_role_menu_permissions',
+  timestamps: false
+});
+
+RoleMenuPermission.belongsTo(Menu, { foreignKey: 'menu_id' });
+
+module.exports = { User, Role, Permission, UserRole, RolePermission, Menu, RoleMenu, RoleMenuPermission };

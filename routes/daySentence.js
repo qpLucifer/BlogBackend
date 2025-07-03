@@ -26,16 +26,16 @@ router.get('/list', async (req, res) => {
 
 // 添加每日一句
 router.post('/add', async (req, res) => {
-    const { daySentence, auth } = req.body;
+    const { day_sentence, auth } = req.body;
     if (!auth) {
         return res.status(400).json({ error: 'auth is required' });
     }
-    if (!daySentence) {
+    if (!day_sentence) {
         return res.status(400).json({ error: 'Sentence is required' });
     }
     try {
         const newSentence = await BlogSentence.create({
-            day_sentence: daySentence,
+            day_sentence: day_sentence,
             auth: auth
         });
         res.status(201).json({ message: 'Day Sentence added successfully', id: newSentence.id });
@@ -46,15 +46,16 @@ router.post('/add', async (req, res) => {
 });
 
 // 更新每日一句
-router.put('/update', async (req, res) => { 
-    const { id, daySentence, auth } = req.body;
-    if (!id) {  
+router.put('/update/:id', async (req, res) => { 
+    const { day_sentence, auth } = req.body;
+    const { id } = req.params;
+    if (!id) {
         return res.status(400).json({ error: 'id is required' });
     }
     if (!auth) {
         return res.status(400).json({ error: 'auth is required' });
     }
-    if (!daySentence) {
+    if (!day_sentence) {
         return res.status(400).json({ error: 'Sentence is required' });
     }
     try {
@@ -62,7 +63,7 @@ router.put('/update', async (req, res) => {
         if (!sentence) {
             return res.status(404).json({ error: 'Sentence not found' });
         }
-        sentence.day_sentence = daySentence;
+        sentence.day_sentence = day_sentence;
         sentence.auth = auth;
         await sentence.save();  
         res.status(200).json({ message: 'Day Sentence updated successfully' });
