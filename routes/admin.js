@@ -82,18 +82,12 @@ router.get('/roles', async (req, res) => {
   try {
     const roles = await Role.findAll({
       include: [{
-        model: Permission,
-        attributes: ['id', 'name', 'description'],
-        through: { attributes: [] },
-        as: "permissions",
-      },{
         model: Menu,
         attributes: ['id', 'name', 'path'],
-        through: { attributes: [] },
-        as: "menus",  
+        through: { attributes: ['can_create', 'can_read', 'can_update', 'can_delete'], as: "roleMenu" },
+        as: "menus"
       }]
     });
-    
     res.json(roles);
   } catch (error) {
     res.status(500).json({ error: '获取角色列表失败' });

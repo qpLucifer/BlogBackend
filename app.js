@@ -12,7 +12,6 @@ let auth = require('./routes/auth');
 let menuRouter = require('./routes/menu');
 const { sequelize } = require('./models');
 const cors = require('cors');
-const roleMenuPermissionRouter = require('./routes/roleMenuPermission');
 
 let app = express();
 
@@ -55,7 +54,6 @@ app.use('/api/', auth);
 app.use('/api/admin', adminRouter);
 app.use('/api/daySentence', daySentenceRouter);
 app.use('/api/menu', menuRouter);
-app.use('/api/roleMenuPermissions', roleMenuPermissionRouter);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));

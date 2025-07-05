@@ -12,7 +12,9 @@ router.use(checkRole('admin'));
 // 获取所有菜单
 router.get('/', async (req, res) => {
   try {
-    const menus = await Menu.findAll({ order: [['order', 'ASC']] });
+    const menus = await Menu.findAll({ 
+      order: [['order', 'ASC']] 
+    });
     res.json(menus);
   } catch (error) {
     res.status(500).json({ error: '获取菜单失败' });

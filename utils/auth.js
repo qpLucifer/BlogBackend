@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { User } = require('../models/admin');
 const { Role } = require('../models/admin');
-const { Permission } = require('../models/admin');
+const { Menu } = require('../models/admin');
 
 // 密码加密
 const hashPassword = async (password) => {
@@ -78,10 +78,10 @@ const loginUser = async (username, password) => {
       through: { attributes: [] },
       as: "roles",
       include: [{
-        model: Permission,
-        attributes: ['id', 'name'],
-        through: { attributes: [] },
-        as: "permissions"
+        model: Menu,
+        attributes: ['id', 'name', 'path', 'icon', 'order'],
+        through: { attributes: ['can_create', 'can_read', 'can_update', 'can_delete'], as: "roleMenu" },
+        as: "menus"
       }]
     }]
   });
@@ -91,6 +91,26 @@ const loginUser = async (username, password) => {
   if (!user.is_active) {
     throw new Error('用户账户已被禁用');
   }
+
+  const roleMenu = [];
+  const menus = user.roles.map(role => role.menus).flat();
+  menus.forEach(menu => {
+    const index = roleMenu.findIndex(m => m.id === menu.id);
+    if (menu.roleMenu.can_read && index === -1) {
+      roleMenu.push({
+        id: menu.id,
+        name: menu.name,
+        path: menu.path,
+        icon: menu.icon,
+        order: menu.order,
+        can_create: menu.roleMenu.can_create,
+        can_read: menu.roleMenu.can_read,
+        can_update: menu.roleMenu.can_update,
+        can_delete: menu.roleMenu.can_delete,
+      })
+    }
+  });
+  
   
   return {
     token: generateToken(user),
@@ -98,7 +118,7 @@ const loginUser = async (username, password) => {
       id: user.id,
       username: user.username,
       roles: user.roles.map(role => role.name),
-      permissions: user.roles.reduce((acc, role) => acc.concat(role.permissions.map(permission => permission.name)), []),
+      menus: roleMenu,
       email: user.email,
       is_active: user.is_active,
       created_at: user.created_at,

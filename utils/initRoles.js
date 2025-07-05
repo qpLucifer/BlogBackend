@@ -70,8 +70,15 @@ module.exports = async function() {
       { name: '菜单管理', path: '/menu', icon: 'menu', order: 4 }
     ]);
     
-    // 分配菜单给admin角色
-    await adminRole.setMenus(menus);
+    // 分配菜单给admin角色,并分配权限
+    await adminRole.setMenus(menus, {
+      through: {
+        can_create: true,
+        can_read: true,
+        can_update: true,
+        can_delete: true
+      }
+    });
     
     //生成一些高质量的每日一句
     const sentences = [
