@@ -1,6 +1,6 @@
 // utils/initRoles.js - 初始化角色和权限
 module.exports = async function() {
-  const { Role, Permission, User, Menu } = require('../models/admin');
+  const { Role, User, Menu } = require('../models/admin');
   const { registerUser } = require('./auth');
   const { BlogSentence } = require('../models/blogSentence');
   
@@ -8,15 +8,6 @@ module.exports = async function() {
     // 检查是否已初始化
     const adminInit = await Role.findOne({ where: { name: 'admin' } });
     if (adminInit) return;
-
-    // 创建权限
-    const permissions = await Permission.bulkCreate([
-      { name: 'user:read', description: '查看用户信息' },
-      { name: 'user:write', description: '管理用户' },
-      { name: 'role:manage', description: '管理角色' },
-      { name: 'content:read', description: '查看内容' },
-      { name: 'content:write', description: '管理内容' }
-    ]);
     
     // 创建角色
     const adminRole = await Role.create({
@@ -52,15 +43,6 @@ module.exports = async function() {
     if (normalUser) {
       await normalUser.addRole(userRole);
     }
-    
-    // 分配权限
-    await adminRole.addPermissions(permissions);
-    await editorRole.addPermissions(permissions.filter(p => 
-      p.name.startsWith('content:') || p.name === 'user:read'
-    ));
-    await userRole.addPermissions(permissions.filter(p => 
-      p.name === 'content:read' || p.name === 'user:read'
-    ));
     
     // 创建菜单
     const menus = await Menu.bulkCreate([

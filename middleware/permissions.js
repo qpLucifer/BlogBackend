@@ -45,6 +45,8 @@ const checkRole = (roleName) => {
       
       next();
     } catch (error) {
+      console.log('用户角色:', error);
+
       res.status(500).json({ error: '角色验证失败' });
     }
   };
