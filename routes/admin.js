@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkPermission, checkRole } = require('../middleware/permissions');
-const { User, Role, Permission, Menu } = require('../models/admin');
+const { User, Role, Permission, Menu, RoleMenu} = require('../models/admin');
 
 // 需要认证
 router.use(authenticate);
@@ -97,10 +97,18 @@ router.get('/roles', async (req, res) => {
 // 创建角色
 router.post('/roles', async (req, res) => {
   try {
-    const { name, description, permissions } = req.body;
+    const { name, description, menus } = req.body;
     const role = await Role.create({ name, description });
-    if (permissions) {
-      await role.setPermissions(permissions);
+    if (menus && Array.isArray(menus)) {
+      // 准备批量插入数据
+      const menuPermissions = menus.map((menu) => ({
+        role_id: role.id,
+        menu_id: menu.menuId,
+        ...menu.roleMenu,
+      }));
+
+      // 批量创建关联
+      await RoleMenu.bulkCreate(menuPermissions);
     }
     res.json(role);
   } catch (error) {
@@ -111,14 +119,24 @@ router.post('/roles', async (req, res) => {
 // 更新角色
 router.put('/roles/:id', async (req, res) => {
   try {
-    const { name, description, permissions } = req.body;
+    const { name, description, menus } = req.body;
     const role = await Role.findByPk(req.params.id);
     if (!role) {
       return res.status(404).json({ error: '角色不存在' });
     }
     await role.update({ name, description });
-    if (permissions) {
-      await role.setPermissions(permissions);
+    // 删除所有现有关联
+    await RoleMenu.destroy({ where: { role_id: role.id } });
+    if (menus && Array.isArray(menus)) {
+      // 准备批量插入数据
+      const menuPermissions = menus.map((menu) => ({
+        role_id: role.id,
+        menu_id: menu.menuId,
+        ...menu.roleMenu,
+      }));
+
+      // 批量创建关联
+      await RoleMenu.bulkCreate(menuPermissions);
     }
     res.json(role);
   } catch (error) {
