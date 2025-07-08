@@ -6,10 +6,11 @@ let logger = require('morgan');
 // 加载环境变量
 require('dotenv').config();
 
-let daySentenceRouter = require('./routes/daySentence');
-let adminRouter  = require('./routes/admin');
 let auth = require('./routes/auth');
+let userRouter  = require('./routes/user');
+let roleRouter = require('./routes/role');
 let menuRouter = require('./routes/menu');
+let daySentenceRouter = require('./routes/daySentence');
 const { sequelize } = require('./models');
 const cors = require('cors');
 
@@ -49,11 +50,12 @@ app.use(cors({
 }));
 
 app.use('/api/', auth);
-// app.use('/api/users', usersRouter);
-// app.use('/login', auth);
-app.use('/api/admin', adminRouter);
-app.use('/api/daySentence', daySentenceRouter);
+app.use('/api/user', userRouter);
+app.use('/api/role', roleRouter);
 app.use('/api/menu', menuRouter);
+app.use('/api/daySentence', daySentenceRouter);
+
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
