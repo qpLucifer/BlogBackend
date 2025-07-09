@@ -1,3 +1,4 @@
+const {permissionNameObj} = require('../utils/tool');
 // middleware/permissions.js - 权限中间件
 const checkPermission = (permissionName) => {
   return async (req, res, next) => {
@@ -24,7 +25,37 @@ const checkPermission = (permissionName) => {
     }
   };
 };
+// 检查菜单的增删改查权限
+const checkMenuPermission = (menuName,permissionName) => {
+  return async (req, res, next) => {
+    try {
+      // 确保用户已加载权限
+      if (!req.user) {
+        return res.status(401).json({ error: '用户未认证' });
+      }
+      if (!req.menus) {
+        return res.status(403).json({ error: '菜单权限不足' });
+      }
+      
+      // 检查用户是否有指定权限
+      const hasPermission = req.menus.find(menu => menu.name === menuName);
+      if (!hasPermission) {
+        return res.status(403).json({ error: '菜单权限不足' });
+      }
+      if (!hasPermission[permissionName]) {
 
+        return res.status(403).json({ 
+          error: menuName+ '菜单'+permissionNameObj[permissionName]+'权限不足',
+          required: permissionName,
+        });
+      }
+      
+      next();
+    } catch (error) {
+      res.status(500).json({ error: '权限验证失败' });
+    }
+  };
+};
 // 检查角色中间件
 const checkRole = (roleName) => {
   return async (req, res, next) => {
@@ -54,5 +85,6 @@ const checkRole = (roleName) => {
 
 module.exports = {
   checkPermission,
-  checkRole
+  checkRole,
+  checkMenuPermission
 };

@@ -2,18 +2,16 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
-const { checkPermission, checkRole } = require('../middleware/permissions');
+const { checkPermission, checkRole, checkMenuPermission } = require('../middleware/permissions');
 const { User, Role, Menu, RoleMenu} = require('../models/admin');
+const { hashPassword } = require('../utils/auth');
 
 // 需要认证
 router.use(authenticate);
 
-// 需要管理员角色或特定权限
-// router.use(checkRole('admin')); // 或者使用 checkPermission('user:write')
-
 // 获取所有用户
-router.get('/users', async (req, res) => {
-  try {
+router.get('/users',checkMenuPermission('用户管理','can_read'), async (req, res) => {
+  try {    
     const users = await User.findAll({
       attributes: ['id', 'username', 'email', 'is_active', 'created_at'],
       include: [{
@@ -30,8 +28,24 @@ router.get('/users', async (req, res) => {
   }
 });
 
+// 新增用户
+router.post('/users',checkMenuPermission('用户管理','can_create'), async (req, res) => {
+  try {
+    const { username, email, password, roles } = req.body;
+    const hashedPassword = await hashPassword(password);
+    const user = await User.create({ username, email, password_hash:hashedPassword });
+    if (roles) {
+      await user.setRoles(roles);
+    }
+    res.status(201).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '新增用户失败' });
+  }
+});
+
 // 更新用户
-router.put('/users/:id', async (req, res) => {
+router.put('/users/:id',checkMenuPermission('用户管理','can_update'), async (req, res) => {
   try {
     const { username, email, is_active, roles } = req.body;
     const user = await User.findByPk(req.params.id);
@@ -49,7 +63,7 @@ router.put('/users/:id', async (req, res) => {
 });
 
 // 更新用户个人信息
-router.put('/users/:id/profile', async (req, res) => {
+router.put('/users/:id/profile',checkMenuPermission('用户管理','can_update'), async (req, res) => {
   try {
     const { mood, signature } = req.body;
     const user = await User.findByPk(req.params.id);
@@ -64,7 +78,7 @@ router.put('/users/:id/profile', async (req, res) => {
 });
 
 // 删除用户
-router.delete('/users/:id', async (req, res) => {
+router.delete('/users/:id',checkMenuPermission('用户管理','can_delete'), async (req, res) => {
   try {
     const user = await User.findByPk(req.params.id);
     if (!user) {

@@ -1,6 +1,8 @@
 // middleware/auth.js - 认证中间件
 const jwt = require('jsonwebtoken');
-const { User, Role } = require('../models/admin');
+const { User, Role, RoleMenu, Menu } = require('../models/admin');
+const { mergePermissions } = require('../utils/tool');
+
 
 const authenticate = async (req, res, next) => {
   try {
@@ -22,8 +24,31 @@ const authenticate = async (req, res, next) => {
         attributes: ['id', 'name'],
         through: { attributes: [] },
         as:"roles",
+        include: [{
+          model: Menu,
+          attributes: ['id', 'name'],
+          through: { attributes: ['can_read', 'can_create', 'can_update', 'can_delete'] },
+          as:"menus",
+        }]
       }]
     });
+
+    req.user = {
+      ...user.get({ plain: true }),
+    };
+
+    req.menus = user.roles.flatMap(role => role.menus.map(menu => ({
+      id: menu.id,
+      name: menu.name,
+      can_read: menu.RoleMenu.can_read,
+      can_create: menu.RoleMenu.can_create,
+      can_update: menu.RoleMenu.can_update,
+      can_delete: menu.RoleMenu.can_delete,
+    })));
+
+    // req.menus去重，并且以有权限的为主，因为可能有多个角色，每个角色菜单都不一样，以有权限的角色为主
+    req.menus = mergePermissions(req.menus);
+
     
     if (!user) {
       return res.status(401).json({ error: '无效用户' });
