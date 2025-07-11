@@ -46,10 +46,13 @@ module.exports = async function() {
     
     // 创建菜单
     const menus = await Menu.bulkCreate([
-      { name: '首页', path: '/dashboard', icon: 'dashboard', order: 1 },
-      { name: '用户管理', path: '/users', icon: 'user', order: 2 },
-      { name: '角色管理', path: '/roles', icon: 'team', order: 3 },
-      { name: '菜单管理', path: '/menu', icon: 'menu', order: 4 }
+      { name: '首页', path: '/dashboard', icon: 'DashboardOutlined', order: 1 },
+      { name: '博客管理', path: '/blogs', icon: 'DashboardOutlined', order: 2 },
+      { name: '评论管理', path: '/comments', icon: 'DashboardOutlined', order: 3 },
+      { name: '标签管理', path: '/tags', icon: 'DashboardOutlined', order: 4 },
+      { name: '用户管理', path: '/users', icon: 'DashboardOutlined', order: 5 },
+      { name: '角色管理', path: '/roles', icon: 'DashboardOutlined', order: 6 },
+      { name: '菜单管理', path: '/menu', icon: 'DashboardOutlined', order: 7 }
     ]);
     
     // 分配菜单给admin角色,并分配权限

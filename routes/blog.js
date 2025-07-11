@@ -29,6 +29,7 @@ router.post('/add', checkMenuPermission('博客管理','can_create'), async (req
     }
     res.status(201).json(blog);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: '新增博客失败' });
   }
 });

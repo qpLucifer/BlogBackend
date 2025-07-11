@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // 上传图片接口
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/image', upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: '未上传文件' });
   }

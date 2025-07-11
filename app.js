@@ -14,6 +14,7 @@ let daySentenceRouter = require('./routes/daySentence');
 let blogRouter = require('./routes/blog');
 let commentRouter = require('./routes/comment');
 let tagRouter = require('./routes/tag');
+let uploadRouter = require('./routes/upload');
 
 const { sequelize } = require('./models');
 const cors = require('cors');
@@ -50,7 +51,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization','X-Requested-With','Content-Type']
 }));
 
 app.use('/api/', auth);
@@ -61,6 +62,7 @@ app.use('/api/daySentence', daySentenceRouter);
 app.use('/api/blog', blogRouter);
 app.use('/api/blog', commentRouter);
 app.use('/api/blog', tagRouter);
+app.use('/api/upload', uploadRouter);
 
 
 // catch 404 and forward to error handler
