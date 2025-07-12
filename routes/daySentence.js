@@ -1,17 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
-const { checkPermission, checkRole } = require('../middleware/permissions');
+const { checkPermission, checkRole, checkMenuPermission } = require('../middleware/permissions');
 const { BlogSentence } = require('../models/blogSentence');
 
 // 需要认证
 router.use(authenticate);
 
-// 需要管理员角色或特定权限
-router.use(checkRole('admin')); // 或者使用 checkPermission('user:write')
-
 // 获取每日一句列表
-router.get('/list', async (req, res) => {
+router.get('/list', checkMenuPermission('每日一句','can_read'), async (req, res) => {
     try {
         const sentences = await BlogSentence.findAll({
             attributes: ['id', 'auth', 'day_sentence'],
@@ -25,7 +22,7 @@ router.get('/list', async (req, res) => {
 });
 
 // 添加每日一句
-router.post('/add', async (req, res) => {
+router.post('/add', checkMenuPermission('每日一句','can_create'), async (req, res) => {
     const { day_sentence, auth } = req.body;
     if (!auth) {
         return res.status(400).json({ error: 'auth is required' });
@@ -46,7 +43,7 @@ router.post('/add', async (req, res) => {
 });
 
 // 更新每日一句
-router.put('/update/:id', async (req, res) => { 
+router.put('/update/:id', checkMenuPermission('每日一句','can_update'), async (req, res) => { 
     const { day_sentence, auth } = req.body;
     const { id } = req.params;
     if (!id) {
@@ -74,7 +71,7 @@ router.put('/update/:id', async (req, res) => {
 });
 
 // 删除每日一句
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/delete/:id', checkMenuPermission('每日一句','can_delete'), async (req, res) => {
     const { id } = req.params;
     if (!id) {
         return res.status(400).json({ error: 'id is required' });

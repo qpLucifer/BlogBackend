@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const { User } = require('../models/admin');
 const { Role } = require('../models/admin');
 const { Menu } = require('../models/admin');
+const { buildMenuTree } = require('../utils/tool');
 
 // 密码加密
 const hashPassword = async (password) => {
@@ -79,7 +80,7 @@ const loginUser = async (username, password) => {
       as: "roles",
       include: [{
         model: Menu,
-        attributes: ['id', 'name', 'path', 'icon', 'order'],
+        attributes: ['id', 'name', 'path', 'icon', 'order', 'parent_id'],
         through: { attributes: ['can_create', 'can_read', 'can_update', 'can_delete'], as: "roleMenu" },
         as: "menus"
       }]
@@ -103,6 +104,7 @@ const loginUser = async (username, password) => {
         path: menu.path,
         icon: menu.icon,
         order: menu.order,
+        parent_id: menu.parent_id,
         can_create: menu.roleMenu.can_create,
         can_read: menu.roleMenu.can_read,
         can_update: menu.roleMenu.can_update,
@@ -110,22 +112,20 @@ const loginUser = async (username, password) => {
       })
     }
   });
-  
-  
+
+  // 使用公共函数构建菜单树
+  const menusTree = buildMenuTree(roleMenu);
+
   return {
-    token: generateToken(user),
     user: {
       id: user.id,
       username: user.username,
-      roles: user.roles.map(role => role.name),
-      menus: roleMenu,
       email: user.email,
       is_active: user.is_active,
-      created_at: user.created_at,
-      updated_at: user.updated_at,
-      signature: user.signature,
-      mood: user.mood,
-    }
+      roles: user.roles.map(role => role.name),
+      menus: menusTree
+    },
+    token: generateToken(user)
   };
 };
 

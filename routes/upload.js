@@ -2,8 +2,13 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const authenticate = require('../middleware/auth');
+const { checkMenuPermission } = require('../middleware/permissions');
 
 const router = express.Router();
+
+// 需要认证
+router.use(authenticate);
 
 // 确保 images 目录存在
 const uploadDir = path.join(__dirname, '../public/images');
@@ -25,7 +30,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // 上传图片接口
-router.post('/image', upload.single('file'), (req, res) => {
+router.post('/image', checkMenuPermission('博客管理','can_create'), upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: '未上传文件' });
   }

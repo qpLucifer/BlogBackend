@@ -37,8 +37,22 @@ const checkMenuPermission = (menuName,permissionName) => {
         return res.status(403).json({ error: '菜单权限不足' });
       }
       
+      // 递归查找菜单权限
+      function findMenuPermissionRecursive(menus, targetMenuName) {
+        for (const menu of menus) {
+          if (menu.name === targetMenuName) {
+            return menu;
+          }
+          if (menu.children && menu.children.length > 0) {
+            const found = findMenuPermissionRecursive(menu.children, targetMenuName);
+            if (found) return found;
+          }
+        }
+        return null;
+      }
+      
       // 检查用户是否有指定权限
-      const hasPermission = req.menus.find(menu => menu.name === menuName);
+      const hasPermission = findMenuPermissionRecursive(req.menus, menuName);
       if (!hasPermission) {
         return res.status(403).json({ error: '菜单权限不足' });
       }

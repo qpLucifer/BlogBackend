@@ -2,17 +2,14 @@
 const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
-const { checkPermission, checkRole } = require('../middleware/permissions');
+const { checkPermission, checkRole, checkMenuPermission } = require('../middleware/permissions');
 const { Role, Menu, RoleMenu} = require('../models/admin');
 
 // 需要认证
 router.use(authenticate);
 
-// 需要管理员角色或特定权限
-// router.use(checkRole('admin')); // 或者使用 checkPermission('user:write')
-
 // 获取所有角色
-router.get('/roles', async (req, res) => {
+router.get('/roles', checkMenuPermission('角色管理','can_read'), async (req, res) => {
   try {
     const roles = await Role.findAll({
       include: [{
@@ -29,7 +26,7 @@ router.get('/roles', async (req, res) => {
 });
 
 // 创建角色
-router.post('/roles', async (req, res) => {
+router.post('/roles', checkMenuPermission('角色管理','can_create'), async (req, res) => {
   try {
     const { name, description, menus } = req.body;
     const role = await Role.create({ name, description });
@@ -51,7 +48,7 @@ router.post('/roles', async (req, res) => {
 });
 
 // 更新角色
-router.put('/roles/:id', async (req, res) => {
+router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), async (req, res) => {
   try {
     const { name, description, menus } = req.body;
     const role = await Role.findByPk(req.params.id);
@@ -79,7 +76,7 @@ router.put('/roles/:id', async (req, res) => {
 });
 
 // 删除角色
-router.delete('/roles/:id', async (req, res) => {
+router.delete('/roles/:id', checkMenuPermission('角色管理','can_delete'), async (req, res) => {
   try {
     const role = await Role.findByPk(req.params.id);
     if (!role) {

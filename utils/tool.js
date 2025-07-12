@@ -1,34 +1,57 @@
-let permissionNameObj = {
-    can_read:'查看',
-    can_create:'创建',
-    can_update:'更新',
-    can_delete:'删除',
-}
+// 权限名称映射
+const permissionNameObj = {
+  can_read: '查看',
+  can_create: '创建',
+  can_update: '更新',
+  can_delete: '删除',
+};
 
-function mergePermissions(data) {
-    const merged = {};
+// 合并权限，以有权限的为主
+const mergePermissions = (menus) => {
+  const menuMap = new Map();
+  
+  menus.forEach(menu => {
+    if (menuMap.has(menu.id)) {
+      const existing = menuMap.get(menu.id);
+      // 合并权限，以有权限的为主
+      existing.can_create = existing.can_create || menu.can_create;
+      existing.can_read = existing.can_read || menu.can_read;
+      existing.can_update = existing.can_update || menu.can_update;
+      existing.can_delete = existing.can_delete || menu.can_delete;
+    } else {
+      menuMap.set(menu.id, { ...menu });
+    }
+  });
+  
+  return Array.from(menuMap.values());
+};
 
-    data.forEach(item => {
-        const { id, name } = item;
+// 构建菜单树的公共函数
+const buildMenuTree = (list, parentId = null) => {
+  return list
+    .filter(item => item.parent_id === parentId)
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+    .map(item => ({
+      ...item,
+      children: buildMenuTree(list, item.id)
+    }));
+};
 
-        // 如果该ID首次出现，直接存储
-        if (!merged[id]) {
-            merged[id] = { ...item };
-            return;
-        }
-
-        // 合并权限字段（逻辑或操作）
-        merged[id].can_read ||= item.can_read;
-        merged[id].can_create ||= item.can_create;
-        merged[id].can_update ||= item.can_update;
-        merged[id].can_delete ||= item.can_delete;
-    });
-
-    // 转换为数组并返回
-    return Object.values(merged);
-}
+// 递归查找菜单的公共函数
+const findMenuRecursive = (menus, targetPath) => {
+  for (const menu of menus) {
+    if (menu.path === targetPath) return menu;
+    if (menu.children && menu.children.length > 0) {
+      const found = findMenuRecursive(menu.children, targetPath);
+      if (found) return found;
+    }
+  }
+  return null;
+};
 
 module.exports = {
-    permissionNameObj,
-    mergePermissions
-}
+  permissionNameObj,
+  mergePermissions,
+  buildMenuTree,
+  findMenuRecursive
+};
