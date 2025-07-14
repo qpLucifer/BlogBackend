@@ -8,7 +8,7 @@ const { Tag } = require('../models/blog');
 router.use(authenticate);
 
 // 获取所有标签
-router.get('/tags', checkMenuPermission('标签管理','can_read'), async (req, res) => {
+router.get('/list', checkMenuPermission('标签管理','can_read'), async (req, res) => {
   try {
     const tags = await Tag.findAll();
     res.json(tags);
@@ -18,7 +18,7 @@ router.get('/tags', checkMenuPermission('标签管理','can_read'), async (req, 
 });
 
 // 新增标签
-router.post('/tags', checkMenuPermission('标签管理','can_create'), async (req, res) => {
+router.post('/add', checkMenuPermission('标签管理','can_create'), async (req, res) => {
   try {
     const { name } = req.body;
     const tag = await Tag.create({ name });
@@ -29,7 +29,7 @@ router.post('/tags', checkMenuPermission('标签管理','can_create'), async (re
 });
 
 // 更新标签
-router.put('/tags/:id', checkMenuPermission('标签管理','can_update'), async (req, res) => {
+router.put('/update/:id', checkMenuPermission('标签管理','can_update'), async (req, res) => {
   try {
     const { name } = req.body;
     const tag = await Tag.findByPk(req.params.id);
@@ -44,7 +44,7 @@ router.put('/tags/:id', checkMenuPermission('标签管理','can_update'), async 
 });
 
 // 删除标签
-router.delete('/tags/:id', checkMenuPermission('标签管理','can_delete'), async (req, res) => {
+router.delete('/delete/:id', checkMenuPermission('标签管理','can_delete'), async (req, res) => {
   try {
     const tag = await Tag.findByPk(req.params.id);
     if (!tag) {

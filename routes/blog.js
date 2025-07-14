@@ -19,6 +19,21 @@ router.get('/list', checkMenuPermission('博客管理','can_read'), async (req, 
   }
 });
 
+// 获取单篇博客
+router.get('/:id', checkMenuPermission('博客管理','can_read'), async (req, res) => {
+  try {
+    const blog = await Blog.findByPk(req.params.id, {
+      include: [{ model: Tag, as: 'tags', through: { attributes: [] } }]
+    });
+    if (!blog) {
+      return res.status(404).json({ error: '博客不存在' });
+    }
+    res.json(blog);
+  } catch (error) {
+    res.status(500).json({ error: '获取博客失败' });
+  }
+});
+
 // 新增博客
 router.post('/add', checkMenuPermission('博客管理','can_create'), async (req, res) => {
   try {
