@@ -60,7 +60,7 @@ app.use('/api/role', roleRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/daySentence', daySentenceRouter);
 app.use('/api/blog', blogRouter);
-app.use('/api/comment', commentRouter);
+app.use('/api/comments', commentRouter);
 app.use('/api/tag', tagRouter);
 app.use('/api/upload', uploadRouter);
 

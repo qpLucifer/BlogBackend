@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
-const { Blog, Tag, BlogTag, Comment } = require('../models/blog');
+const { Blog, Tag, BlogTag, Comment} = require('../models/blog');
+const { User } = require('../models/admin');
 
 // 需要认证
 router.use(authenticate);
@@ -13,7 +14,12 @@ router.get('/list', checkMenuPermission('博客管理','can_read'), async (req, 
     const blogs = await Blog.findAll({
       include: [{ model: Tag, as: 'tags', through: { attributes: [] } }]
     });
-    res.json(blogs);
+    let resBlogs = blogs;
+    for (let i in resBlogs) {
+      const user = await User.findByPk(blogs[i].author_id);
+      resBlogs[i].author_id = user.username
+    }
+    res.json(resBlogs);
   } catch (error) {
     res.status(500).json({ error: '获取博客列表失败' });
   }

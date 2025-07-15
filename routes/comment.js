@@ -8,7 +8,7 @@ const { Comment } = require('../models/blog');
 router.use(authenticate);
 
 // 获取所有评论
-router.get('/comments', checkMenuPermission('评论管理','can_read'), async (req, res) => {
+router.get('/list', checkMenuPermission('评论管理','can_read'), async (req, res) => {
   try {
     const comments = await Comment.findAll();
     res.json(comments);
@@ -18,7 +18,7 @@ router.get('/comments', checkMenuPermission('评论管理','can_read'), async (r
 });
 
 // 新增评论
-router.post('/comments', checkMenuPermission('评论管理','can_create'), async (req, res) => {
+router.post('/add', checkMenuPermission('评论管理','can_create'), async (req, res) => {
   try {
     const { blog_id, user_id, content, parent_id } = req.body;
     const comment = await Comment.create({ blog_id, user_id, content, parent_id });
@@ -29,7 +29,7 @@ router.post('/comments', checkMenuPermission('评论管理','can_create'), async
 });
 
 // 更新评论
-router.put('/comments/:id', checkMenuPermission('评论管理','can_update'), async (req, res) => {
+router.put('/update/:id', checkMenuPermission('评论管理','can_update'), async (req, res) => {
   try {
     const { content } = req.body;
     const comment = await Comment.findByPk(req.params.id);
@@ -44,7 +44,7 @@ router.put('/comments/:id', checkMenuPermission('评论管理','can_update'), as
 });
 
 // 删除评论
-router.delete('/comments/:id', checkMenuPermission('评论管理','can_delete'), async (req, res) => {
+router.delete('/delete/:id', checkMenuPermission('评论管理','can_delete'), async (req, res) => {
   try {
     const comment = await Comment.findByPk(req.params.id);
     if (!comment) {
