@@ -1,19 +1,19 @@
 const {permissionNameObj} = require('../utils/tool');
+const { fail } = require('../utils/response');
 // middleware/permissions.js - 权限中间件
 const checkPermission = (permissionName) => {
   return async (req, res, next) => {
     try {
       // 确保用户已加载权限
       if (!req.user || !req.user.permissions) {
-        return res.status(401).json({ error: '用户未认证' });
+        return fail(res, '用户未认证', 401);
       }
       
       // 检查用户是否有指定权限
       const hasPermission = req.user.permissions.includes(permissionName);
       
       if (!hasPermission) {
-        return res.status(403).json({ 
-          error: '权限不足',
+        return fail(res, '权限不足', 403, { 
           required: permissionName,
           current: req.user.permissions
         });
@@ -21,7 +21,7 @@ const checkPermission = (permissionName) => {
       
       next();
     } catch (error) {
-      res.status(500).json({ error: '权限验证失败' });
+      fail(res, '权限验证失败', 500);
     }
   };
 };
@@ -31,10 +31,10 @@ const checkMenuPermission = (menuName,permissionName) => {
     try {
       // 确保用户已加载权限
       if (!req.user) {
-        return res.status(401).json({ error: '用户未认证' });
+        return fail(res, '用户未认证', 401);
       }
       if (!req.menus) {
-        return res.status(403).json({ error: '菜单权限不足' });
+        return fail(res, '菜单权限不足', 403);
       }
       
       // 递归查找菜单权限
@@ -54,19 +54,16 @@ const checkMenuPermission = (menuName,permissionName) => {
       // 检查用户是否有指定权限
       const hasPermission = findMenuPermissionRecursive(req.menus, menuName);
       if (!hasPermission) {
-        return res.status(403).json({ error: '菜单权限不足' });
+        return fail(res, '菜单权限不足', 403);
       }
       if (!hasPermission[permissionName]) {
 
-        return res.status(403).json({ 
-          error: menuName+ '菜单'+permissionNameObj[permissionName]+'权限不足',
-          required: permissionName,
-        });
+        return fail(res, menuName+ '菜单'+permissionNameObj[permissionName]+'权限不足', 403, { required: permissionName });
       }
       
       next();
     } catch (error) {
-      res.status(500).json({ error: '权限验证失败' });
+      fail(res, '权限验证失败', 500);
     }
   };
 };
@@ -75,14 +72,13 @@ const checkRole = (roleName) => {
   return async (req, res, next) => {
     try {
       if (!req.user || !req.user.roles) {
-        return res.status(401).json({ error: '用户未认证' });
+        return fail(res, '用户未认证', 401);
       }
       
       const hasRole = req.user.roles.some(role => role.name === roleName);
       
       if (!hasRole) {
-        return res.status(403).json({ 
-          error: '角色权限不足',
+        return fail(res, '角色权限不足', 403, { 
           required: roleName,
           current: req.user.roles.map(r => r.name)
         });
@@ -91,8 +87,7 @@ const checkRole = (roleName) => {
       next();
     } catch (error) {
       console.log('用户角色:', error);
-
-      res.status(500).json({ error: '角色验证失败' });
+      fail(res, '角色验证失败', 500);
     }
   };
 };

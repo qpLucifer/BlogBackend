@@ -3,15 +3,16 @@ const express = require('express');
 const router = express.Router();
 const { registerUser, loginUser } = require('../utils/auth');
 const jwt = require('jsonwebtoken');
+const { success, fail } = require('../utils/response');
 
 // 用户注册
 router.post('/register', async (req, res) => {
   try {
     const { username, password, email, is_active, roles } = req.body;
     const result = await registerUser(username, password, email, is_active, roles);
-    res.status(201).json(result);
+    success(res, result, '注册成功', 201);
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    fail(res, error.message || '注册失败', 400);
   }
 });
 
@@ -20,9 +21,9 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     const result = await loginUser(username, password);
-    res.json(result);
+    success(res, result, '登录成功');
   } catch (error) {
-    res.status(401).json({ error: error.message });
+    fail(res, error.message || '登录失败', 401);
   }
 });
 
@@ -36,7 +37,7 @@ router.post('/logout', (req, res) => {
       console.error('JWT签名失败:', err);
     }
   });
-  res.json({ message: '用户已登出' });
+  success(res, null, '用户已登出');
 });
 
 module.exports = router;

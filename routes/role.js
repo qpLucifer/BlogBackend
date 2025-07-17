@@ -4,6 +4,8 @@ const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkPermission, checkRole, checkMenuPermission } = require('../middleware/permissions');
 const { Role, Menu, RoleMenu} = require('../models/admin');
+const { success, fail } = require('../utils/response');
+const { Op } = require('sequelize');
 
 // 需要认证
 router.use(authenticate);
@@ -21,7 +23,7 @@ router.get('/roles', checkMenuPermission('角色管理','can_read'), async (req,
     });
     res.json(roles);
   } catch (error) {
-    res.status(500).json({ error: '获取角色列表失败' });
+    fail(res, '获取角色列表失败', 500);
   }
 });
 
@@ -41,9 +43,9 @@ router.post('/roles', checkMenuPermission('角色管理','can_create'), async (r
       // 批量创建关联
       await RoleMenu.bulkCreate(menuPermissions);
     }
-    res.json(role);
+    success(res, role, '创建角色成功');
   } catch (error) {
-    res.status(500).json({ error: '创建角色失败' });
+    fail(res, '创建角色失败', 500);
   }
 });
 

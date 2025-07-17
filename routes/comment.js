@@ -3,6 +3,8 @@ const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
 const { Comment } = require('../models/blog');
+const { success, fail } = require('../utils/response');
+const { Op } = require('sequelize');
 
 // 需要认证
 router.use(authenticate);
@@ -13,7 +15,7 @@ router.get('/list', checkMenuPermission('评论管理','can_read'), async (req, 
     const comments = await Comment.findAll();
     res.json(comments);
   } catch (error) {
-    res.status(500).json({ error: '获取评论列表失败' });
+    fail(res, '获取评论列表失败', 500);
   }
 });
 
@@ -22,9 +24,9 @@ router.post('/add', checkMenuPermission('评论管理','can_create'), async (req
   try {
     const { blog_id, user_id, content, parent_id } = req.body;
     const comment = await Comment.create({ blog_id, user_id, content, parent_id });
-    res.status(201).json(comment);
+    success(res, comment, '新增评论成功', 201);
   } catch (error) {
-    res.status(500).json({ error: '新增评论失败' });
+    fail(res, '新增评论失败', 500);
   }
 });
 

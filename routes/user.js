@@ -5,6 +5,8 @@ const authenticate = require('../middleware/auth');
 const { checkPermission, checkRole, checkMenuPermission } = require('../middleware/permissions');
 const { User, Role, Menu, RoleMenu} = require('../models/admin');
 const { hashPassword } = require('../utils/auth');
+const { success, fail } = require('../utils/response');
+const { Op } = require('sequelize');
 
 // 需要认证
 router.use(authenticate);
@@ -24,7 +26,7 @@ router.get('/users',checkMenuPermission('用户管理','can_read'), async (req, 
     
     res.json(users);
   } catch (error) {
-    res.status(500).json({ error: '获取用户列表失败' });
+    fail(res, '获取用户列表失败', 500);
   }
 });
 
@@ -37,10 +39,9 @@ router.post('/users',checkMenuPermission('用户管理','can_create'), async (re
     if (roles) {
       await user.setRoles(roles);
     }
-    res.status(201).json(user);
+    success(res, user, '新增用户成功', 201);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: '新增用户失败' });
+    fail(res, '新增用户失败', 500);
   }
 });
 
@@ -50,15 +51,15 @@ router.put('/users/:id',checkMenuPermission('用户管理','can_update'), async 
     const { username, email, is_active, roles } = req.body;
     const user = await User.findByPk(req.params.id);
     if (!user) {
-      return res.status(404).json({ error: '用户不存在' });
+      return fail(res, '用户不存在', 404);
     }
     await user.update({ username, email, is_active });
     if (roles) {
       await user.setRoles(roles);
     }
-    res.json(user);
+    success(res, user, '更新用户成功');
   } catch (error) {
-    res.status(500).json({ error: '更新用户失败' });
+    fail(res, '更新用户失败', 500);
   }
 });
 

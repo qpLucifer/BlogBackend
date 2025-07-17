@@ -4,6 +4,8 @@ const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
 const { Blog, Tag, BlogTag, Comment} = require('../models/blog');
 const { User } = require('../models/admin');
+const { success, fail } = require('../utils/response');
+const { Op } = require('sequelize');
 
 // 需要认证
 router.use(authenticate);
@@ -21,7 +23,7 @@ router.get('/list', checkMenuPermission('博客管理','can_read'), async (req, 
     }
     res.json(resBlogs);
   } catch (error) {
-    res.status(500).json({ error: '获取博客列表失败' });
+    fail(res, '获取博客列表失败', 500);
   }
 });
 
@@ -32,11 +34,11 @@ router.get('/:id', checkMenuPermission('博客管理','can_read'), async (req, r
       include: [{ model: Tag, as: 'tags', through: { attributes: [] } }]
     });
     if (!blog) {
-      return res.status(404).json({ error: '博客不存在' });
+      return fail(res, '博客不存在', 404);
     }
-    res.json(blog);
+    success(res, blog, '获取博客成功');
   } catch (error) {
-    res.status(500).json({ error: '获取博客失败' });
+    fail(res, '获取博客失败', 500);
   }
 });
 
@@ -48,10 +50,9 @@ router.post('/add', checkMenuPermission('博客管理','can_create'), async (req
     if (tags && tags.length > 0) {
       await blog.setTags(tags);
     }
-    res.status(201).json(blog);
+    success(res, blog, '新增博客成功', 201);
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: '新增博客失败' });
+    fail(res, '新增博客失败', 500);
   }
 });
 
@@ -61,15 +62,15 @@ router.put('/update/:id', checkMenuPermission('博客管理','can_update'), asyn
     const { title, cover_image, content, summary, author_id, tags, is_published } = req.body;
     const blog = await Blog.findByPk(req.params.id);
     if (!blog) {
-      return res.status(404).json({ error: '博客不存在' });
+      return fail(res, '博客不存在', 404);
     }
     await blog.update({ title, cover_image, content, summary, author_id, is_published });
     if (tags) {
       await blog.setTags(tags);
     }
-    res.json(blog);
+    success(res, blog, '更新博客成功');
   } catch (error) {
-    res.status(500).json({ error: '更新博客失败' });
+    fail(res, '更新博客失败', 500);
   }
 });
 

@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
+const { success, fail } = require('../utils/response');
 
 const router = express.Router();
 
@@ -32,10 +33,10 @@ const upload = multer({ storage });
 // 上传图片接口
 router.post('/image', checkMenuPermission('博客管理','can_create'), upload.single('file'), (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ error: '未上传文件' });
+    return fail(res, '未上传文件', 400);
   }
   const url = `/images/${req.file.filename}`;
-  res.json({ url });
+  success(res, { url }, '上传图片成功');
 });
 
 module.exports = router; 

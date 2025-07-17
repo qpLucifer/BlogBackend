@@ -2,6 +2,7 @@
 const jwt = require('jsonwebtoken');
 const { User, Role, RoleMenu, Menu } = require('../models/admin');
 const { mergePermissions } = require('../utils/tool');
+const { fail } = require('../utils/response');
 
 
 const authenticate = async (req, res, next) => {
@@ -10,7 +11,7 @@ const authenticate = async (req, res, next) => {
     const token = req.headers.authorization?.split(' ')[1];
     
     if (!token) {
-      return res.status(401).json({ error: '未提供认证令牌' });
+      return fail(res, '未提供认证令牌', 401);
     }
     
     // 验证token
@@ -51,11 +52,11 @@ const authenticate = async (req, res, next) => {
 
     
     if (!user) {
-      return res.status(401).json({ error: '无效用户' });
+      return fail(res, '无效用户', 401);
     }
     
     if (!user.is_active) {
-      return res.status(403).json({ error: '用户账户已被禁用' });
+      return fail(res, '用户账户已被禁用', 403);
     }
 
     req.user = {
@@ -65,10 +66,10 @@ const authenticate = async (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: '令牌已过期' });
+      return fail(res, '令牌已过期', 401);
     }
     console.log('认证错误:', error);
-    res.status(401).json({ error: '无效令牌' });
+    fail(res, '无效令牌', 401);
   }
 };
 

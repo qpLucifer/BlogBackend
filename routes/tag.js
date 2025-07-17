@@ -3,6 +3,8 @@ const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
 const { Tag } = require('../models/blog');
+const { success, fail } = require('../utils/response');
+const { Op } = require('sequelize');
 
 // 需要认证
 router.use(authenticate);
@@ -13,7 +15,7 @@ router.get('/list', checkMenuPermission('标签管理','can_read'), async (req, 
     const tags = await Tag.findAll();
     res.json(tags);
   } catch (error) {
-    res.status(500).json({ error: '获取标签列表失败' });
+    fail(res, '获取标签列表失败', 500);
   }
 });
 
@@ -22,9 +24,9 @@ router.post('/add', checkMenuPermission('标签管理','can_create'), async (req
   try {
     const { name } = req.body;
     const tag = await Tag.create({ name });
-    res.status(201).json(tag);
+    success(res, tag, '新增标签成功', 201);
   } catch (error) {
-    res.status(500).json({ error: '新增标签失败' });
+    fail(res, '新增标签失败', 500);
   }
 });
 
