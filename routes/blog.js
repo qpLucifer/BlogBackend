@@ -36,7 +36,12 @@ router.get('/list', checkMenuPermission('博客管理','can_read'), async (req, 
       const user = await User.findByPk(blogs[i].author_id);
       resBlogs[i].author_id = user.username
     }
-    success(res, resBlogs, '获取博客列表成功');
+    success(res, {
+      list: resBlogs,
+      total: blogs.length,
+      pageSize: pageSize*1,
+      currentPage: currentPage*1,
+    }, '获取博客列表成功');
   } catch (error) {
     console.log(error);
     fail(res, '获取博客列表失败', 500);
@@ -66,7 +71,7 @@ router.post('/add', checkMenuPermission('博客管理','can_create'), async (req
     if (tags && tags.length > 0) {
       await blog.setTags(tags);
     }
-    success(res, blog, '新增博客成功', 201);
+    success(res, blog, '新增博客成功', 200);
   } catch (error) {
     fail(res, '新增博客失败', 500);
   }

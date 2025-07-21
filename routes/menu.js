@@ -26,7 +26,7 @@ router.get('/', checkMenuPermission('菜单管理','can_read'), async (req, res)
 router.post('/', checkMenuPermission('菜单管理','can_create'), async (req, res) => {
   try {
     const menu = await Menu.create(req.body);
-    success(res, menu, '创建菜单成功', 201);
+    success(res, menu, '创建菜单成功', 200);
   } catch (error) {
     fail(res, error.message || '创建菜单失败', 400);
   }

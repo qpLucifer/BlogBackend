@@ -36,7 +36,7 @@ router.post('/add', checkMenuPermission('每日一句','can_create'), async (req
             day_sentence: day_sentence,
             auth: auth
         });
-        success(res, { id: newSentence.id }, 'Day Sentence added successfully', 201);
+        success(res, { id: newSentence.id }, 'Day Sentence added successfully', 200);
     } catch (error) {
         fail(res, 'Internal Server Error', 500);
     }

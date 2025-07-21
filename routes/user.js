@@ -39,7 +39,7 @@ router.post('/users',checkMenuPermission('用户管理','can_create'), async (re
     if (roles) {
       await user.setRoles(roles);
     }
-    success(res, user, '新增用户成功', 201);
+    success(res, user, '新增用户成功', 200);
   } catch (error) {
     fail(res, '新增用户失败', 500);
   }

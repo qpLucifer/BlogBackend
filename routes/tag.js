@@ -24,7 +24,7 @@ router.post('/add', checkMenuPermission('标签管理','can_create'), async (req
   try {
     const { name } = req.body;
     const tag = await Tag.create({ name });
-    success(res, tag, '新增标签成功', 201);
+    success(res, tag, '新增标签成功', 200);
   } catch (error) {
     fail(res, '新增标签失败', 500);
   }

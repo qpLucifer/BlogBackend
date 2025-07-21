@@ -10,7 +10,7 @@ router.post('/register', async (req, res) => {
   try {
     const { username, password, email, is_active, roles } = req.body;
     const result = await registerUser(username, password, email, is_active, roles);
-    success(res, result, '注册成功', 201);
+    success(res, result, '注册成功', 200);
   } catch (error) {
     fail(res, error.message || '注册失败', 400);
   }

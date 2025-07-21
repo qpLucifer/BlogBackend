@@ -24,7 +24,7 @@ router.post('/add', checkMenuPermission('评论管理','can_create'), async (req
   try {
     const { blog_id, user_id, content, parent_id } = req.body;
     const comment = await Comment.create({ blog_id, user_id, content, parent_id });
-    success(res, comment, '新增评论成功', 201);
+    success(res, comment, '新增评论成功', 200);
   } catch (error) {
     fail(res, '新增评论失败', 500);
   }
