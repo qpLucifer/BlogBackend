@@ -15,6 +15,8 @@ const Blog = sequelize.define(
     likes: { type: DataTypes.INTEGER, defaultValue: 0 },
     comments_count: { type: DataTypes.INTEGER, defaultValue: 0 },
     is_published: { type: DataTypes.BOOLEAN, defaultValue: false },
+    is_choice: { type: DataTypes.BOOLEAN, defaultValue: false },
+    need_time: { type: DataTypes.INTEGER, defaultValue: 0 },
   },
   {
     tableName: "blog_articles",
