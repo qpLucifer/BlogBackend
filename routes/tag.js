@@ -12,8 +12,22 @@ router.use(authenticate);
 // 获取所有标签
 router.get('/list', checkMenuPermission('标签管理','can_read'), async (req, res) => {
   try {
-    const tags = await Tag.findAll();
-    res.json(tags);
+    const { name, pageSize, currentPage } = req.query;
+    const tags = await Tag.findAll({
+      where: {
+        name: {
+          [Op.like]: `%${name}%`
+        }
+      },
+      limit: pageSize*1,
+      offset: (currentPage*1 - 1) * pageSize*1,
+    });
+    success(res, {
+      list: tags,
+      total: tags.length,
+      pageSize: pageSize*1,
+      currentPage: currentPage*1,
+    }, '获取标签列表成功');
   } catch (error) {
     fail(res, '获取标签列表失败', 500);
   }
