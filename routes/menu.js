@@ -85,11 +85,26 @@ router.post('/role/:roleId', checkMenuPermission('菜单管理','can_update'), a
 // 获取菜单树
 router.get('/tree', checkMenuPermission('菜单管理','can_read'), async (req, res) => {
   try {
-    const menus = await Menu.findAll({ order: [['order', 'ASC']] });
+    const { name, path } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (name) {
+      whereConditions.name = { [Op.like]: `%${name}%` };
+    }
+    if (path) {
+      whereConditions.path = { [Op.like]: `%${path}%` };
+    }
+
+    const menus = await Menu.findAll({
+      where: whereConditions,
+      order: [['order', 'ASC']]
+    });
     const menuList = menus.map(menu => menu.toJSON());
     const menuTree = buildMenuTree(menuList);
     success(res, menuTree, '获取菜单树成功');
   } catch (error) {
+    console.log(error);
     fail(res, '获取菜单树失败', 500);
   }
 });

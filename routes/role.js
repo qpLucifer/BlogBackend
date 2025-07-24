@@ -13,16 +13,39 @@ router.use(authenticate);
 // 获取所有角色
 router.get('/roles', checkMenuPermission('角色管理','can_read'), async (req, res) => {
   try {
+    const { name, pageSize = 10, currentPage = 1 } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (name) {
+      whereConditions.name = { [Op.like]: `%${name}%` };
+    }
+
+    // 获取总数
+    const total = await Role.count({ where: whereConditions });
+
+    // 获取分页数据
     const roles = await Role.findAll({
       include: [{
         model: Menu,
         attributes: ['id', 'name', 'path'],
         through: { attributes: ['can_create', 'can_read', 'can_update', 'can_delete'], as: "roleMenu" },
         as: "menus"
-      }]
+      }],
+      where: whereConditions,
+      limit: parseInt(pageSize),
+      offset: (parseInt(currentPage) - 1) * parseInt(pageSize),
+      order: [['created_at', 'DESC']]
     });
-    res.json(roles);
+
+    success(res, {
+      list: roles,
+      total: total,
+      pageSize: parseInt(pageSize),
+      currentPage: parseInt(currentPage),
+    }, '获取角色列表成功');
   } catch (error) {
+    console.log(error);
     fail(res, '获取角色列表失败', 500);
   }
 });

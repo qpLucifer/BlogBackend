@@ -12,9 +12,39 @@ router.use(authenticate);
 // 获取所有评论
 router.get('/list', checkMenuPermission('评论管理','can_read'), async (req, res) => {
   try {
-    const comments = await Comment.findAll();
-    res.json(comments);
+    const { content, user_id, blog_id, pageSize = 10, currentPage = 1 } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (content) {
+      whereConditions.content = { [Op.like]: `%${content}%` };
+    }
+    if (user_id) {
+      whereConditions.user_id = user_id;
+    }
+    if (blog_id) {
+      whereConditions.blog_id = blog_id;
+    }
+
+    // 获取总数
+    const total = await Comment.count({ where: whereConditions });
+
+    // 获取分页数据
+    const comments = await Comment.findAll({
+      where: whereConditions,
+      limit: parseInt(pageSize),
+      offset: (parseInt(currentPage) - 1) * parseInt(pageSize),
+      order: [['created_at', 'DESC']]
+    });
+
+    success(res, {
+      list: comments,
+      total: total,
+      pageSize: parseInt(pageSize),
+      currentPage: parseInt(currentPage),
+    }, '获取评论列表成功');
   } catch (error) {
+    console.log(error);
     fail(res, '获取评论列表失败', 500);
   }
 });

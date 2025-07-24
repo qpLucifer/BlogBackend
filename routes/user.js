@@ -26,7 +26,25 @@ router.get('/list', async (req, res) => {
 
 // 获取所有用户
 router.get('/users',checkMenuPermission('用户管理','can_read'), async (req, res) => {
-  try {    
+  try {
+    const { username, email, is_active, pageSize = 10, currentPage = 1 } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (username) {
+      whereConditions.username = { [Op.like]: `%${username}%` };
+    }
+    if (email) {
+      whereConditions.email = { [Op.like]: `%${email}%` };
+    }
+    if (is_active !== undefined && is_active !== '') {
+      whereConditions.is_active = is_active;
+    }
+
+    // 获取总数
+    const total = await User.count({ where: whereConditions });
+
+    // 获取分页数据
     const users = await User.findAll({
       attributes: ['id', 'username', 'email', 'is_active', 'created_at'],
       include: [{
@@ -34,11 +52,21 @@ router.get('/users',checkMenuPermission('用户管理','can_read'), async (req, 
         attributes: ['id', 'name'],
         through: { attributes: [] },
         as:"roles"
-      }]
+      }],
+      where: whereConditions,
+      limit: parseInt(pageSize),
+      offset: (parseInt(currentPage) - 1) * parseInt(pageSize),
+      order: [['created_at', 'DESC']]
     });
-    
-    res.json(users);
+
+    success(res, {
+      list: users,
+      total: total,
+      pageSize: parseInt(pageSize),
+      currentPage: parseInt(currentPage),
+    }, '获取用户列表成功');
   } catch (error) {
+    console.log(error);
     fail(res, '获取用户列表失败', 500);
   }
 });
