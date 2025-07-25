@@ -61,6 +61,9 @@ router.post('/add', checkMenuPermission('标签管理','can_create'), async (req
     const tag = await Tag.create({ name });
     success(res, tag, '新增标签成功', 200);
   } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return fail(res, '标签已存在', 400);
+    }
     fail(res, '新增标签失败', 500);
   }
 });
