@@ -47,7 +47,6 @@ router.get('/listPage', checkMenuPermission('角色管理','can_read'), async (r
       where: whereConditions,
       limit: parseInt(pageSize),
       offset: (parseInt(currentPage) - 1) * parseInt(pageSize),
-      order: [['created_at', 'DESC']]
     });
 
     success(res, {

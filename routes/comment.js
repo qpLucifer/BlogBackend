@@ -10,7 +10,17 @@ const { Op } = require('sequelize');
 router.use(authenticate);
 
 // 获取所有评论
-router.get('/list', checkMenuPermission('评论管理','can_read'), async (req, res) => {
+router.get('/listAll', async (req, res) => {
+  try {
+    const comments = await Comment.findAll();
+    success(res, comments, '获取评论列表成功');
+  } catch (error) {
+    fail(res, '获取评论列表失败', 500);
+  }
+});
+
+// 分页获取评论列表
+router.get('/listPage', checkMenuPermission('评论管理','can_read'), async (req, res) => {
   try {
     const { content, user_id, blog_id, pageSize = 10, currentPage = 1 } = req.query;
 
