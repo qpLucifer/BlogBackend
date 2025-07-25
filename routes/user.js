@@ -12,7 +12,7 @@ const { Op } = require('sequelize');
 router.use(authenticate);
 
 // 获取所有用户
-router.get('/list', async (req, res) => {
+router.get('/listAll', async (req, res) => {
   try {    
     const users = await User.findAll({
       attributes: ['id', 'username'],
@@ -25,7 +25,7 @@ router.get('/list', async (req, res) => {
 });
 
 // 获取所有用户
-router.get('/users',checkMenuPermission('用户管理','can_read'), async (req, res) => {
+router.get('/listPage',checkMenuPermission('用户管理','can_read'), async (req, res) => {
   try {
     const { username, email, is_active, pageSize = 10, currentPage = 1 } = req.query;
 

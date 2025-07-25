@@ -10,14 +10,37 @@ const { success, fail } = require('../utils/response');
 // 需要认证
 router.use(authenticate);
 
-// 获取所有博客
-router.get('/list', checkMenuPermission('博客管理','can_read'), async (req, res) => {
+// 获取所有博客列表
+router.get('/listAll', async (req, res) => {
+  try {
+    const blogs = await Blog.findAll({
+      attributes: ['id', 'title'],
+    });
+    success(res, blogs, '获取博客列表成功');
+  } catch (error) {
+    fail(res, '获取博客列表失败', 500);
+  }
+});
+
+// 分页获取所有博客
+router.get('/listPage', checkMenuPermission('博客管理','can_read'), async (req, res) => {
   try {
     const { title, is_published, is_choice, author_id, pageSize, currentPage } = req.query;
     const titleQuery = title ? { title: { [Op.like]: `%${title}%` } } : {};
     const is_publishedQuery = is_published ? { is_published: is_published } : {};
     const is_choiceQuery = is_choice ? { is_choice: is_choice } : {};
     const author_idQuery = author_id ? { author_id: author_id } : {};
+    // 获取总数
+    const total = await Blog.count({
+      where: {    
+        [Op.and]: [
+          titleQuery,
+          is_publishedQuery,
+          is_choiceQuery,
+          author_idQuery,
+        ]
+      }
+    }); 
     const blogs = await Blog.findAll({
       include: [{ model: Tag, as: 'tags', through: { attributes: [] } }],
       where: {
@@ -38,7 +61,7 @@ router.get('/list', checkMenuPermission('博客管理','can_read'), async (req, 
     }
     success(res, {
       list: resBlogs,
-      total: blogs.length,
+      total: total, 
       pageSize: pageSize*1,
       currentPage: currentPage*1,
     }, '获取博客列表成功');

@@ -11,7 +11,19 @@ const { Op } = require('sequelize');
 router.use(authenticate);
 
 // 获取所有角色
-router.get('/roles', checkMenuPermission('角色管理','can_read'), async (req, res) => {
+router.get('/listAll', async (req, res) => {
+  try {
+    const roles = await Role.findAll({
+      attributes: ['id', 'name'],
+    });
+    success(res, roles, '获取角色列表成功');
+  } catch (error) {
+    fail(res, '获取角色列表失败', 500);
+  }
+});
+
+// 分页获取所有角色
+router.get('/listPage', checkMenuPermission('角色管理','can_read'), async (req, res) => {
   try {
     const { name, pageSize = 10, currentPage = 1 } = req.query;
 

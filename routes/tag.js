@@ -9,10 +9,31 @@ const { Op } = require('sequelize');
 // 需要认证
 router.use(authenticate);
 
-// 获取所有标签
-router.get('/list', checkMenuPermission('标签管理','can_read'), async (req, res) => {
+// 获取所有标签列表
+router.get('/listAll', async (req, res) => {
+  try {
+    const tags = await Tag.findAll({
+      attributes: ['id', 'name'],
+    });
+    success(res, tags, '获取标签列表成功');
+  } catch (error) {
+    fail(res, '获取标签列表失败', 500);
+  }
+});
+
+
+// 分页获取所有标签
+router.get('/listPage', checkMenuPermission('标签管理','can_read'), async (req, res) => {
   try {
     const { name, pageSize, currentPage } = req.query;
+    // 获取总数
+    const total = await Tag.count({
+      where: {
+        name: {
+          [Op.like]: `%${name}%`
+        }
+      }
+    });
     const tags = await Tag.findAll({
       where: {
         name: {
@@ -24,7 +45,7 @@ router.get('/list', checkMenuPermission('标签管理','can_read'), async (req, 
     });
     success(res, {
       list: tags,
-      total: tags.length,
+      total: total,
       pageSize: pageSize*1,
       currentPage: currentPage*1,
     }, '获取标签列表成功');
