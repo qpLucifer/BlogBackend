@@ -97,4 +97,52 @@ router.delete('/delete/:id', checkMenuPermission('标签管理','can_delete'), a
   }
 });
 
+// 导出标签
+router.get('/export', checkMenuPermission('标签管理','can_read'), async (req, res) => {
+  try {
+    const { name } = req.query;
+    
+    // 构建查询条件
+    const whereConditions = {};
+    if (name) {
+      whereConditions.name = {
+        [Op.like]: `%${name}%`
+      };
+    }
+
+    const tags = await Tag.findAll({
+      where: whereConditions,
+      attributes: ['id', 'name', 'createdAt'],
+      order: [['id', 'ASC']]
+    });
+
+    // 设置响应头
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=tags_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    // 构建Excel数据
+    const XLSX = require('xlsx');
+    const workbook = XLSX.utils.book_new();
+    
+    const worksheetData = [
+      ['ID', '标签名', '创建时间'], // 表头
+      ...tags.map(tag => [
+        tag.id,
+        tag.name,
+        new Date(tag.createdAt).toLocaleString('zh-CN')
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, '标签列表');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('导出标签失败:', error);
+    fail(res, '导出标签失败', 500);
+  }
+});
+
 module.exports = router; 

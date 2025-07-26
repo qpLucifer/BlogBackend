@@ -18,7 +18,8 @@
     "morgan": "~1.9.1",
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
-    "sequelize": "^6.37.7"
+    "sequelize": "^6.37.7",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "node-dev": "^8.0.0"
