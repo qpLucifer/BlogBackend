@@ -71,6 +71,86 @@ router.get('/listPage', checkMenuPermission('博客管理','can_read'), async (r
   }
 });
 
+// 导出博客 - 必须在 /:id 路由之前
+router.get('/export', checkMenuPermission('博客管理','can_read'), async (req, res) => {
+  try {
+    const { title, is_published, is_choice, author_id } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (title) {
+      whereConditions.title = { [Op.like]: `%${title}%` };
+    }
+    if (is_published !== undefined) {
+      whereConditions.is_published = is_published === 'true';
+    }
+    if (is_choice !== undefined) {
+      whereConditions.is_choice = is_choice === 'true';
+    }
+    if (author_id) {
+      whereConditions.author_id = author_id;
+    }
+
+    const blogs = await Blog.findAll({
+      include: [
+        {
+          model: Tag,
+          as: 'tags',
+          through: { attributes: [] },
+          attributes: ['name']
+        }
+      ],
+      where: whereConditions,
+      attributes: ['id', 'title', 'summary', 'author_id', 'is_published', 'is_choice', 'need_time', 'created_at'],
+      order: [['created_at', 'DESC']]
+    });
+
+    // 获取作者信息
+    const blogsWithAuthor = await Promise.all(
+      blogs.map(async (blog) => {
+        const user = await User.findByPk(blog.author_id, { attributes: ['username'] });
+        return {
+          ...blog.toJSON(),
+          author_name: user ? user.username : '未知用户'
+        };
+      })
+    );
+
+    // 设置响应头
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=blogs_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    // 构建Excel数据
+    const XLSX = require('xlsx');
+    const workbook = XLSX.utils.book_new();
+
+    const worksheetData = [
+      ['ID', '标题', '摘要', '作者', '是否发布', '是否精选', '阅读时长', '标签', '创建时间'], // 表头
+      ...blogsWithAuthor.map(blog => [
+        blog.id,
+        blog.title,
+        blog.summary || '',
+        blog.author_name,
+        blog.is_published ? '已发布' : '草稿',
+        blog.is_choice ? '是' : '否',
+        blog.need_time ? `${blog.need_time}分钟` : '',
+        blog.tags ? blog.tags.map(tag => tag.name).join(', ') : '',
+        new Date(blog.created_at).toLocaleString('zh-CN')
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, '博客列表');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('导出博客失败:', error);
+    fail(res, '导出博客失败', 500);
+  }
+});
+
 // 获取单篇博客
 router.get('/:id', checkMenuPermission('博客管理','can_read'), async (req, res) => {
   try {
@@ -133,4 +213,4 @@ router.delete('/delete/:id', checkMenuPermission('博客管理','can_delete'), a
   }
 });
 
-module.exports = router; 
+module.exports = router;

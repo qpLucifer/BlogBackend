@@ -133,4 +133,67 @@ router.delete('/users/:id',checkMenuPermission('用户管理','can_delete'), asy
   }
 });
 
+// 导出用户
+router.get('/export', checkMenuPermission('用户管理','can_read'), async (req, res) => {
+  try {
+    const { username, email, is_active } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (username) {
+      whereConditions.username = { [Op.like]: `%${username}%` };
+    }
+    if (email) {
+      whereConditions.email = { [Op.like]: `%${email}%` };
+    }
+    if (is_active !== undefined) {
+      whereConditions.is_active = is_active === 'true';
+    }
+
+    const users = await User.findAll({
+      include: [{
+        model: Role,
+        attributes: ['name'],
+        through: { attributes: [] },
+        as: "roles"
+      }],
+      where: whereConditions,
+      attributes: ['id', 'username', 'email', 'is_active', 'mood', 'signature', 'created_at'],
+      order: [['id', 'ASC']]
+    });
+
+    // 设置响应头
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=users_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    // 构建Excel数据
+    const XLSX = require('xlsx');
+    const workbook = XLSX.utils.book_new();
+
+    const worksheetData = [
+      ['ID', '用户名', '邮箱', '状态', '心情', '个性签名', '角色', '创建时间'], // 表头
+      ...users.map(user => [
+        user.id,
+        user.username,
+        user.email,
+        user.is_active ? '激活' : '未激活',
+        user.mood || '',
+        user.signature || '',
+        user.roles ? user.roles.map(role => role.name).join(', ') : '',
+        new Date(user.created_at).toLocaleString('zh-CN')
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, '用户列表');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('导出用户失败:', error);
+    fail(res, '导出用户失败', 500);
+  }
+});
+
 module.exports = router;
