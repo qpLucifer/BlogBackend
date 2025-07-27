@@ -125,4 +125,53 @@ router.delete('/delete/:id', checkMenuPermission('每日一句','can_delete'), a
     }
 });
 
+// 导出每日一句
+router.get('/export', checkMenuPermission('每日一句','can_read'), async (req, res) => {
+    try {
+        const { auth, day_sentence } = req.query;
+
+        // 构建查询条件
+        const whereConditions = {};
+        if (auth) {
+            whereConditions.auth = { [Op.like]: `%${auth}%` };
+        }
+        if (day_sentence) {
+            whereConditions.day_sentence = { [Op.like]: `%${day_sentence}%` };
+        }
+
+        const sentences = await BlogSentence.findAll({
+            where: whereConditions,
+            attributes: ['id', 'auth', 'day_sentence'],
+            order: [['id', 'DESC']]
+        });
+
+        // 设置响应头
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=day_sentences_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+        // 构建Excel数据
+        const XLSX = require('xlsx');
+        const workbook = XLSX.utils.book_new();
+
+        const worksheetData = [
+            ['ID', '作者', '每日一句'], // 表头
+            ...sentences.map(sentence => [
+                sentence.id,
+                sentence.auth,
+                sentence.day_sentence
+            ])
+        ];
+
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+        XLSX.utils.book_append_sheet(workbook, worksheet, '每日一句列表');
+
+        const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+        res.send(buffer);
+
+    } catch (error) {
+        console.error('导出每日一句失败:', error);
+        fail(res, '导出每日一句失败', 500);
+    }
+});
+
 module.exports = router;

@@ -125,5 +125,57 @@ router.delete('/roles/:id', checkMenuPermission('角色管理','can_delete'), as
   }
 });
 
+// 导出角色
+router.get('/export', checkMenuPermission('角色管理','can_read'), async (req, res) => {
+  try {
+    const { name } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (name) {
+      whereConditions.name = { [Op.like]: `%${name}%` };
+    }
+
+    const roles = await Role.findAll({
+      include: [{
+        model: Menu,
+        attributes: ['name'],
+        through: { attributes: [] },
+        as: "menus"
+      }],
+      where: whereConditions,
+      attributes: ['id', 'name', 'description'],
+      order: [['id', 'ASC']]
+    });
+
+    // 设置响应头
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=roles_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    // 构建Excel数据
+    const XLSX = require('xlsx');
+    const workbook = XLSX.utils.book_new();
+
+    const worksheetData = [
+      ['ID', '角色名', '描述', '关联菜单'], // 表头
+      ...roles.map(role => [
+        role.id,
+        role.name,
+        role.description || '',
+        role.menus ? role.menus.map(menu => menu.name).join(', ') : ''
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, '角色列表');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('导出角色失败:', error);
+    fail(res, '导出角色失败', 500);
+  }
+});
 
 module.exports = router;

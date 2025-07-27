@@ -99,4 +99,59 @@ router.delete('/delete/:id', checkMenuPermission('评论管理','can_delete'), a
   }
 });
 
-module.exports = router; 
+// 导出评论
+router.get('/export', checkMenuPermission('评论管理','can_read'), async (req, res) => {
+  try {
+    const { content, user_id, blog_id } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (content) {
+      whereConditions.content = { [Op.like]: `%${content}%` };
+    }
+    if (user_id) {
+      whereConditions.user_id = user_id;
+    }
+    if (blog_id) {
+      whereConditions.blog_id = blog_id;
+    }
+
+    const comments = await Comment.findAll({
+      where: whereConditions,
+      attributes: ['id', 'blog_id', 'user_id', 'content', 'parent_id', 'created_at'],
+      order: [['created_at', 'DESC']]
+    });
+
+    // 设置响应头
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=comments_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    // 构建Excel数据
+    const XLSX = require('xlsx');
+    const workbook = XLSX.utils.book_new();
+
+    const worksheetData = [
+      ['ID', '博客ID', '用户ID', '评论内容', '父评论ID', '创建时间'], // 表头
+      ...comments.map(comment => [
+        comment.id,
+        comment.blog_id,
+        comment.user_id,
+        comment.content,
+        comment.parent_id || '',
+        new Date(comment.created_at).toLocaleString('zh-CN')
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, '评论列表');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('导出评论失败:', error);
+    fail(res, '导出评论失败', 500);
+  }
+});
+
+module.exports = router;

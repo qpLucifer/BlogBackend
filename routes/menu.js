@@ -109,4 +109,56 @@ router.get('/tree', checkMenuPermission('菜单管理','can_read'), async (req, 
   }
 });
 
-module.exports = router; 
+// 导出菜单
+router.get('/export', checkMenuPermission('菜单管理','can_read'), async (req, res) => {
+  try {
+    const { name, path } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    if (name) {
+      whereConditions.name = { [Op.like]: `%${name}%` };
+    }
+    if (path) {
+      whereConditions.path = { [Op.like]: `%${path}%` };
+    }
+
+    const menus = await Menu.findAll({
+      where: whereConditions,
+      attributes: ['id', 'name', 'path', 'icon', 'parent_id', 'order'],
+      order: [['order', 'ASC']]
+    });
+
+    // 设置响应头
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=menus_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+    // 构建Excel数据
+    const XLSX = require('xlsx');
+    const workbook = XLSX.utils.book_new();
+
+    const worksheetData = [
+      ['ID', '菜单名', '路径', '图标', '父菜单ID', '排序'], // 表头
+      ...menus.map(menu => [
+        menu.id,
+        menu.name,
+        menu.path,
+        menu.icon || '',
+        menu.parent_id || '',
+        menu.order
+      ])
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, '菜单列表');
+
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.send(buffer);
+
+  } catch (error) {
+    console.error('导出菜单失败:', error);
+    fail(res, '导出菜单失败', 500);
+  }
+});
+
+module.exports = router;
