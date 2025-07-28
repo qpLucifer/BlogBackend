@@ -22,7 +22,10 @@ router.get('/listAll', async (req, res) => {
 // 分页获取评论列表
 router.get('/listPage', checkMenuPermission('评论管理','can_read'), async (req, res) => {
   try {
-    const { content, user_id, blog_id, pageSize = 10, currentPage = 1 } = req.query;
+    const { content, user_id, blog_id, parent_id, pageSize = 10, currentPage = 1 } = req.query;
+
+    // 调试日志
+    console.log('分页查询参数:', { content, user_id, blog_id, parent_id, pageSize, currentPage });
 
     // 构建查询条件
     const whereConditions = {};
@@ -35,17 +38,67 @@ router.get('/listPage', checkMenuPermission('评论管理','can_read'), async (r
     if (blog_id) {
       whereConditions.blog_id = blog_id;
     }
+    // 添加parent_id过滤支持
+    if (parent_id !== undefined) {
+      if (parent_id === 'main' || parent_id === 'null' || parent_id === null) {
+        // 获取主评论（没有父评论的评论）
+        whereConditions.parent_id = null;
+      } else {
+        // 获取指定父评论的回复
+        whereConditions.parent_id = parseInt(parent_id);
+      }
+    }
 
     // 获取总数
     const total = await Comment.count({ where: whereConditions });
 
     // 获取分页数据
-    const comments = await Comment.findAll({
+    let comments = await Comment.findAll({
       where: whereConditions,
       limit: parseInt(pageSize),
       offset: (parseInt(currentPage) - 1) * parseInt(pageSize),
       order: [['created_at', 'DESC']]
     });
+
+    // 如果是获取主评论，添加回复数量统计（包括所有层级的回复）
+    if (parent_id === 'main' || parent_id === 'null' || parent_id === null) {
+      // 为了性能考虑，我们可以使用一个更简单的方法：
+      // 获取所有评论，然后在内存中计算层级关系
+      const allComments = await Comment.findAll({
+        attributes: ['id', 'parent_id']
+      });
+
+      // 构建父子关系映射
+      const childrenMap = {};
+      allComments.forEach(comment => {
+        if (comment.parent_id) {
+          if (!childrenMap[comment.parent_id]) {
+            childrenMap[comment.parent_id] = [];
+          }
+          childrenMap[comment.parent_id].push(comment.id);
+        }
+      });
+
+      // 递归统计所有后代的函数
+      const countAllDescendants = (commentId) => {
+        const children = childrenMap[commentId] || [];
+        let count = children.length;
+
+        children.forEach(childId => {
+          count += countAllDescendants(childId);
+        });
+
+        return count;
+      };
+
+      comments = comments.map(comment => {
+        const replyCount = countAllDescendants(comment.id);
+        return {
+          ...comment.toJSON(),
+          reply_count: replyCount
+        };
+      });
+    }
 
     success(res, {
       list: comments,
@@ -102,7 +155,7 @@ router.delete('/delete/:id', checkMenuPermission('评论管理','can_delete'), a
 // 导出评论
 router.get('/export', checkMenuPermission('评论管理','can_read'), async (req, res) => {
   try {
-    const { content, user_id, blog_id } = req.query;
+    const { content, user_id, blog_id, parent_id } = req.query;
 
     // 构建查询条件
     const whereConditions = {};
@@ -114,6 +167,14 @@ router.get('/export', checkMenuPermission('评论管理','can_read'), async (req
     }
     if (blog_id) {
       whereConditions.blog_id = blog_id;
+    }
+    // 添加parent_id过滤支持
+    if (parent_id !== undefined) {
+      if (parent_id === 'main' || parent_id === 'null' || parent_id === null) {
+        whereConditions.parent_id = null;
+      } else {
+        whereConditions.parent_id = parseInt(parent_id);
+      }
     }
 
     const comments = await Comment.findAll({
