@@ -15,6 +15,8 @@ let commentRouter = require('./routes/comment');
 let tagRouter = require('./routes/tag');
 let uploadRouter = require('./routes/upload');
 let systemRouter = require('./routes/system');
+let logsRouter = require('./routes/logs');
+let performanceRouter = require('./routes/performance');
 
 const { sequelize } = require('./models');
 const cors = require('cors');
@@ -80,6 +82,8 @@ app.use('/api/comments', commentRouter);
 app.use('/api/tag', tagRouter);
 app.use('/api/upload', uploadRouter);
 app.use('/api/system', systemRouter);
+app.use('/api/logs', logsRouter);
+app.use('/api/performance', performanceRouter);
 
 
 // 404错误处理

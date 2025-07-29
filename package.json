@@ -8,7 +8,8 @@
     "start": "node ./scripts/pre-start.js && node ./bin/www",
     "start:skip-check": "node ./bin/www",
     "pre-start": "node ./scripts/pre-start.js",
-    "db": "node ./scripts/db-manager.js"
+    "db": "node ./scripts/db-manager.js",
+    "add-system-menus": "node ./scripts/addSystemMenus.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
