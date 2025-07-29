@@ -81,11 +81,45 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-// 数据库同步
-sequelize.sync({ alter: true })
-  .then(() => console.log('数据库已同步'))
-  .catch(err => console.error('数据库同步失败:', err));
+// 数据库连接和同步
+const initDatabase = async () => {
+  try {
+    // 测试数据库连接
+    await sequelize.authenticate();
+    console.log('✅ 数据库连接成功');
 
-// 初始化角色和权限
-require('./utils/initRoles')();
+    // 同步数据库模型
+    await sequelize.sync({
+      alter: true,
+      logging: process.env.NODE_ENV === 'development' ? console.log : false
+    });
+    console.log('✅ 数据库同步成功');
+
+    // 初始化角色和权限
+    require('./utils/initRoles')();
+    console.log('✅ 初始数据加载完成');
+
+  } catch (error) {
+    console.error('❌ 数据库初始化失败:', error.message);
+
+    // 针对索引超限错误的特殊处理
+    if (error.message.includes('Too many keys')) {
+      console.error('');
+      console.error('🔧 检测到索引超限错误，请运行以下命令修复:');
+      console.error('   npm run db check     # 检查索引状态');
+      console.error('   npm run db fix --exec # 修复重复索引');
+      console.error('   npm run db reset     # 重置数据库（删除数据）');
+      console.error('');
+    }
+
+    // 生产环境下退出进程
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+  }
+};
+
+// 启动数据库初始化
+initDatabase();
+
 module.exports = app;

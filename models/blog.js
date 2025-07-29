@@ -1,7 +1,7 @@
 const { sequelize } = require("./index");
 const { DataTypes } = require("sequelize");
 
-// 博客模型
+// 博客模型 - 优化索引配置
 const Blog = sequelize.define(
   "Blog",
   {
@@ -22,6 +22,37 @@ const Blog = sequelize.define(
     tableName: "blog_articles",
     timestamps: true,
     underscored: true,
+    // 手动控制索引
+    indexes: [
+      {
+        fields: ['author_id'], // 作者索引（用于查询作者的博客）
+        name: 'blog_author_idx'
+      },
+      {
+        fields: ['is_published'], // 发布状态索引
+        name: 'blog_published_idx'
+      },
+      {
+        fields: ['is_published', 'created_at'], // 复合索引（用于查询已发布博客并排序）
+        name: 'blog_published_created_idx'
+      },
+      {
+        fields: ['is_choice'], // 精选状态索引
+        name: 'blog_choice_idx'
+      },
+      {
+        fields: ['views'], // 浏览量索引（用于热门排序）
+        name: 'blog_views_idx'
+      },
+      {
+        fields: ['likes'], // 点赞数索引
+        name: 'blog_likes_idx'
+      },
+      {
+        fields: ['created_at'], // 创建时间索引（用于时间排序）
+        name: 'blog_created_idx'
+      }
+    ]
   }
 );
 
@@ -39,23 +70,71 @@ const Tag = sequelize.define(
   }
 );
 
-// 博客-标签多对多关系
+// 博客-标签多对多关系 - 优化索引配置
 const BlogTag = sequelize.define(
   "BlogTag",
   {
-    blog_id: DataTypes.INTEGER,
-    tag_id: DataTypes.INTEGER,
+    blog_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'blog_articles',
+        key: 'id'
+      }
+    },
+    tag_id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'blog_tags',
+        key: 'id'
+      }
+    },
   },
   {
     tableName: "blog_article_tags",
     timestamps: false,
+    // 手动控制索引
+    indexes: [
+      {
+        unique: true,
+        fields: ['blog_id', 'tag_id'], // 复合唯一索引
+        name: 'blog_tag_unique'
+      },
+      {
+        fields: ['blog_id'], // 博客ID索引（用于查询博客的标签）
+        name: 'blog_tag_blog_idx'
+      },
+      {
+        fields: ['tag_id'], // 标签ID索引（用于查询标签的博客）
+        name: 'blog_tag_tag_idx'
+      }
+    ]
   }
 );
 
-Blog.belongsToMany(Tag, { through: BlogTag, foreignKey: "blog_id", as: "tags" });
-Tag.belongsToMany(Blog, { through: BlogTag, foreignKey: "tag_id" });
+// 设置关联 - 禁用自动索引创建
+Blog.belongsToMany(Tag, {
+  through: BlogTag,
+  foreignKey: "blog_id",
+  otherKey: "tag_id",
+  as: "tags",
+  constraints: false,
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
 
-// 评论模型
+Tag.belongsToMany(Blog, {
+  through: BlogTag,
+  foreignKey: "tag_id",
+  otherKey: "blog_id",
+  as: "blogs",
+  constraints: false,
+  onDelete: 'CASCADE',
+  onUpdate: 'CASCADE'
+});
+
+// 评论模型 - 优化索引配置
 const Comment = sequelize.define(
   "Comment",
   {
@@ -69,10 +148,45 @@ const Comment = sequelize.define(
     tableName: "blog_comments",
     timestamps: true,
     underscored: true,
+    // 手动控制索引
+    indexes: [
+      {
+        fields: ['blog_id'], // 博客ID索引（用于查询博客的评论）
+        name: 'comment_blog_idx'
+      },
+      {
+        fields: ['user_id'], // 用户ID索引（用于查询用户的评论）
+        name: 'comment_user_idx'
+      },
+      {
+        fields: ['parent_id'], // 父评论索引（用于查询回复）
+        name: 'comment_parent_idx'
+      },
+      {
+        fields: ['blog_id', 'parent_id'], // 复合索引（用于查询博客的主评论）
+        name: 'comment_blog_parent_idx'
+      },
+      {
+        fields: ['blog_id', 'created_at'], // 复合索引（用于按时间排序博客评论）
+        name: 'comment_blog_created_idx'
+      },
+      {
+        fields: ['created_at'], // 创建时间索引
+        name: 'comment_created_idx'
+      }
+    ]
   }
 );
 
-Blog.hasMany(Comment, { foreignKey: "blog_id", as: "comments" });
-Comment.belongsTo(Blog, { foreignKey: "blog_id" });
+// 设置关联 - 不创建额外索引
+Blog.hasMany(Comment, {
+  foreignKey: "blog_id",
+  as: "comments",
+  constraints: false
+});
+Comment.belongsTo(Blog, {
+  foreignKey: "blog_id",
+  constraints: false
+});
 
 module.exports = { Blog, Tag, BlogTag, Comment }; 

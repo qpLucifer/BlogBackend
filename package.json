@@ -3,7 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "node-dev ./bin/www"
+    "dev": "node ./scripts/pre-start.js && node-dev ./bin/www",
+    "dev:skip-check": "node-dev ./bin/www",
+    "start": "node ./scripts/pre-start.js && node ./bin/www",
+    "start:skip-check": "node ./bin/www",
+    "pre-start": "node ./scripts/pre-start.js",
+    "db": "node ./scripts/db-manager.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
