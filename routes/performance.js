@@ -30,7 +30,7 @@ router.get('/realtime',
         cpu: {
           count: cpus.length,
           model: cpus[0]?.model || 'Unknown',
-          usage: systemStats.cpu,
+          usage: (systemStats.cpu.system / systemStats.cpu.user).toFixed(2),
           loadAverage: os.loadavg()
         },
         memory: {

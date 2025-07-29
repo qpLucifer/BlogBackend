@@ -2,18 +2,22 @@
 module.exports = async function() {
   const { Role, User, Menu } = require('../models/admin');
   const { registerUser } = require('./auth');
-  const { BlogSentence } = require('../models/blogSentence');
   
   // 菜单配置常量
   const MENU_CONFIG = [
     { name: '首页', path: '/dashboard', icon: 'HomeOutlined', order: 1 },
-    { name: '博客管理', path: '/blogs', icon: 'FileTextOutlined', order: 2 },
-    { name: '评论管理', path: '/comments', icon: 'CommentOutlined', order: 3 },
-    { name: '标签管理', path: '/tags', icon: 'TagOutlined', order: 4 },
-    { name: '用户管理', path: '/users', icon: 'UserOutlined', order: 5 },
-    { name: '角色管理', path: '/roles', icon: 'TeamOutlined', order: 6 },
-    { name: '菜单管理', path: '/menus', icon: 'MenuOutlined', order: 7 },
-    { name: '每日一句', path: '/day-sentence', icon: 'BulbOutlined', order: 8 }
+    { name: '每日一句', path: '/day-sentence', icon: 'BulbOutlined', order: 10 },
+    { name: '博客管理', path: '/blogsManage', icon: 'FileTextOutlined', order: 2 },
+    { name: '博客列表', path: '/blogsManage/blogs', icon: 'FileTextOutlined', order: 3 },
+    { name: '评论管理', path: '/blogsManage/comments', icon: 'CommentOutlined', order: 4 },
+    { name: '标签管理', path: '/blogsManage/tags', icon: 'TagOutlined', order: 5 },
+    { name: '用户管理', path: '/system/users', icon: 'UserOutlined', order: 7 },
+    { name: '角色管理', path: '/system/roles', icon: 'TeamOutlined', order: 8 },
+    { name: '菜单管理', path: '/system/menus', icon: 'MenuOutlined', order: 9 }, 
+    { name: '日志管理', path: '/system/logs', icon: 'FileTextOutlined', order: 12 },  
+    { name: '性能监控', path: '/system/performance', icon: 'DashboardOutlined', order: 13 },
+    { name: '系统管理', path: '/system', icon: 'SettingOutlined', order: 14 },
+    { name: '个人中心', path: '/profile', icon: 'UserOutlined', order: 11 },
   ];
 
   // 角色配置常量
@@ -52,7 +56,30 @@ module.exports = async function() {
 
     // 创建菜单
     const menus = await Menu.bulkCreate(MENU_CONFIG);
-    
+
+    //分配父菜单
+    const systemMenu = await Menu.findOne({ where: { name: '系统管理' } });
+    const logsMenu = await Menu.findOne({ where: { name: '日志管理' } });
+    const performanceMenu = await Menu.findOne({ where: { name: '性能监控' } });
+    const menusMenu = await Menu.findOne({ where: { name: '菜单管理' } });
+    const usersMenu = await Menu.findOne({ where: { name: '用户管理' } });
+    const rolesMenu = await Menu.findOne({ where: { name: '角色管理' } });
+
+    const blogsManageMenu = await Menu.findOne({ where: { name: '博客管理' } });
+    const blogsMenu = await Menu.findOne({ where: { name: '博客列表' } });
+    const commentsMenu = await Menu.findOne({ where: { name: '评论管理' } });
+    const tagsMenu = await Menu.findOne({ where: { name: '标签管理' } });
+
+    await blogsMenu.update({ parent_id: blogsManageMenu.id });
+    await commentsMenu.update({ parent_id: blogsManageMenu.id });
+    await tagsMenu.update({ parent_id: blogsManageMenu.id });
+
+    await logsMenu.update({ parent_id: systemMenu.id });
+    await performanceMenu.update({ parent_id: systemMenu.id });
+    await menusMenu.update({ parent_id: systemMenu.id });
+    await usersMenu.update({ parent_id: systemMenu.id });
+    await rolesMenu.update({ parent_id: systemMenu.id });
+
     // 分配菜单给admin角色,并分配权限
     await roles.admin.setMenus(menus, {
       through: {
