@@ -14,28 +14,20 @@ let blogRouter = require('./routes/blog');
 let commentRouter = require('./routes/comment');
 let tagRouter = require('./routes/tag');
 let uploadRouter = require('./routes/upload');
-let systemRouter = require('./routes/system');
 let logsRouter = require('./routes/logs');
-let performanceRouter = require('./routes/performance');
 
 const { sequelize } = require('./models');
 const cors = require('cors');
 
 // 导入新的中间件和工具
-const { securityHeaders, apiRateLimit, sanitizeInput, xssProtection } = require('./middleware/security');
 const { globalErrorHandler, notFoundHandler } = require('./middleware/errorHandler');
 const { expressLogger } = require('./utils/logger');
-const { systemMonitor } = require('./utils/performance');
-
 let app = express();
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
-// 安全中间件
-app.use(securityHeaders);
-app.use(apiRateLimit);
 
 // 基础中间件
 app.use(logger('dev'));
@@ -68,9 +60,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization','X-Requested-With','Content-Type']
 }));
 
-// 安全过滤中间件
-app.use(sanitizeInput);
-app.use(xssProtection);
 
 app.use('/api/', auth);
 app.use('/api/user', userRouter);
@@ -81,9 +70,7 @@ app.use('/api/blog', blogRouter);
 app.use('/api/comments', commentRouter);
 app.use('/api/tag', tagRouter);
 app.use('/api/upload', uploadRouter);
-app.use('/api/system', systemRouter);
 app.use('/api/logs', logsRouter);
-app.use('/api/performance', performanceRouter);
 
 
 // 404错误处理
@@ -109,13 +96,6 @@ const initDatabase = async () => {
     // 初始化角色和权限
     require('./utils/initRoles')();
     console.log('✅ 初始数据加载完成');
-
-    // 启动系统监控
-    if (process.env.NODE_ENV === 'production') {
-      systemMonitor.startMonitoring(300000); // 5分钟监控一次
-    } else {
-      systemMonitor.startMonitoring(60000); // 开发环境1分钟监控一次
-    }
 
   } catch (error) {
     console.error('❌ 数据库初始化失败:', error.message);

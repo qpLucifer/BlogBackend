@@ -8,18 +8,13 @@ const { Op } = require("sequelize");
 const { success, fail } = require('../utils/response');
 
 // 导入验证和性能监控
-const { validateInput } = require('../middleware/security');
 const { blogValidation, paginationValidation } = require('../utils/validation');
 const { catchAsync } = require('../middleware/errorHandler');
-const { performanceMonitor, responseTimeMiddleware } = require('../utils/performance');
 const { businessLogger } = require('../utils/logger');
 
 // 需要认证
 router.use(authenticate);
 
-// 性能监控
-router.use(performanceMonitor);
-router.use(responseTimeMiddleware);
 
 // 获取所有博客列表
 router.get('/listAll', catchAsync(async (req, res) => {
@@ -161,7 +156,6 @@ router.get('/:id', checkMenuPermission('博客管理','can_read'), catchAsync(as
 // 新增博客
 router.post('/add',
   checkMenuPermission('博客管理','can_create'),
-  validateInput(blogValidation.create),
   catchAsync(async (req, res) => {
     const { title, cover_image, content, summary, author_id, tags, is_published, is_choice, need_time } = req.body;
     const blog = await Blog.create({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });

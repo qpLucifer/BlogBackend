@@ -9,16 +9,10 @@ const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 
 // 导入验证和性能监控
-const { validateInput } = require('../middleware/security');
-const { userValidation, paginationValidation } = require('../utils/validation');
 const { catchAsync } = require('../middleware/errorHandler');
-const { performanceMonitor } = require('../utils/performance');
 
 // 需要认证
 router.use(authenticate);
-
-// 性能监控
-router.use(performanceMonitor);
 
 // 获取所有用户
 router.get('/listAll', catchAsync(async (req, res) => {
@@ -74,7 +68,6 @@ router.get('/listPage',checkMenuPermission('用户管理','can_read'), catchAsyn
 // 新增用户
 router.post('/users',
   checkMenuPermission('用户管理','can_create'),
-  validateInput(userValidation.register),
   catchAsync(async (req, res) => {
     const { username, email, password, roles } = req.body;
     const hashedPassword = await hashPassword(password);
@@ -89,7 +82,6 @@ router.post('/users',
 // 更新用户
 router.put('/users/:id',
   checkMenuPermission('用户管理','can_update'),
-  validateInput(userValidation.update),
   catchAsync(async (req, res) => {
     const { username, email, is_active, roles } = req.body;
     const user = await User.findByPk(req.params.id);

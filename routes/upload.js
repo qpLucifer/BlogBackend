@@ -7,7 +7,6 @@ const { checkMenuPermission } = require('../middleware/permissions');
 const { success, fail } = require('../utils/response');
 
 // 导入安全中间件
-const { uploadRateLimit, fileUploadSecurity } = require('../middleware/security');
 const { catchAsync } = require('../middleware/errorHandler');
 const { securityLogger } = require('../utils/logger');
 
@@ -16,8 +15,6 @@ const router = express.Router();
 // 需要认证
 router.use(authenticate);
 
-// 上传频率限制
-router.use(uploadRateLimit);
 
 // 确保 images 目录存在
 const uploadDir = path.join(__dirname, '../public/images');
@@ -56,7 +53,6 @@ const upload = multer({
 router.post('/image',
   checkMenuPermission('博客管理','can_create'),
   upload.single('file'),
-  fileUploadSecurity,
   catchAsync(async (req, res) => {
     if (!req.file) {
       return fail(res, '未上传文件', 400);

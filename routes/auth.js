@@ -5,14 +5,12 @@ const { registerUser, loginUser } = require('../utils/auth');
 const { success } = require('../utils/response');
 
 // 导入验证和安全中间件
-const { loginRateLimit, validateInput } = require('../middleware/security');
 const { userValidation } = require('../utils/validation');
 const { authLogger } = require('../utils/logger');
 const { catchAsync } = require('../middleware/errorHandler');
 
 // 用户注册
 router.post('/register',
-  validateInput(userValidation.register),
   catchAsync(async (req, res) => {
     const { username, password, email, is_active, roles } = req.body;
     const result = await registerUser(username, password, email, is_active, roles);
@@ -26,8 +24,6 @@ router.post('/register',
 
 // 用户登录
 router.post('/login',
-  loginRateLimit,
-  validateInput(userValidation.login),
   catchAsync(async (req, res) => {
     const { username, password } = req.body;
 
