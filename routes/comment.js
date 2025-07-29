@@ -5,24 +5,20 @@ const { checkMenuPermission } = require('../middleware/permissions');
 const { Comment } = require('../models/blog');
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
+const { catchAsync } = require('../middleware/errorHandler');
 
 // 需要认证
 router.use(authenticate);
 
 // 获取所有评论
-router.get('/listAll', async (req, res) => {
-  try {
-    const comments = await Comment.findAll();
-    success(res, comments, '获取评论列表成功');
-  } catch (error) {
-    fail(res, '获取评论列表失败', 500);
-  }
-});
+router.get('/listAll', catchAsync(async (req, res) => {
+  const comments = await Comment.findAll();
+  success(res, comments, '获取评论列表成功');
+}));
 
 // 分页获取评论列表
-router.get('/listPage', checkMenuPermission('评论管理','can_read'), async (req, res) => {
-  try {
-    const { content, user_id, blog_id, parent_id, pageSize = 10, currentPage = 1 } = req.query;
+router.get('/listPage', checkMenuPermission('评论管理','can_read'), catchAsync(async (req, res) => {
+  const { content, user_id, blog_id, parent_id, pageSize = 10, currentPage = 1 } = req.query;
 
     // 调试日志
     console.log('分页查询参数:', { content, user_id, blog_id, parent_id, pageSize, currentPage });
@@ -106,113 +102,91 @@ router.get('/listPage', checkMenuPermission('评论管理','can_read'), async (r
       pageSize: parseInt(pageSize),
       currentPage: parseInt(currentPage),
     }, '获取评论列表成功');
-  } catch (error) {
-    console.log(error);
-    fail(res, '获取评论列表失败', 500);
-  }
-});
+}));
 
 // 新增评论
-router.post('/add', checkMenuPermission('评论管理','can_create'), async (req, res) => {
-  try {
-    const { blog_id, user_id, content, parent_id } = req.body;
-    const comment = await Comment.create({ blog_id, user_id, content, parent_id });
-    success(res, comment, '新增评论成功', 200);
-  } catch (error) {
-    fail(res, '新增评论失败', 500);
-  }
-});
+router.post('/add', checkMenuPermission('评论管理','can_create'), catchAsync(async (req, res) => {
+  const { blog_id, user_id, content, parent_id } = req.body;
+  const comment = await Comment.create({ blog_id, user_id, content, parent_id });
+  success(res, comment, '新增评论成功', 200);
+}));
 
 // 更新评论
-router.put('/update/:id', checkMenuPermission('评论管理','can_update'), async (req, res) => {
-  try {
-    const { content } = req.body;
-    const comment = await Comment.findByPk(req.params.id);
-    if (!comment) {
-      return res.status(404).json({ error: '评论不存在' });
-    }
-    await comment.update({ content });
-    res.json(comment);
-  } catch (error) {
-    res.status(500).json({ error: '更新评论失败' });
+router.put('/update/:id', checkMenuPermission('评论管理','can_update'), catchAsync(async (req, res) => {
+  const { content } = req.body;
+  const comment = await Comment.findByPk(req.params.id);
+  if (!comment) {
+    return fail(res, '评论不存在', 404);
   }
-});
+  await comment.update({ content });
+  success(res, comment, '更新评论成功');
+}));
 
 // 删除评论
-router.delete('/delete/:id', checkMenuPermission('评论管理','can_delete'), async (req, res) => {
-  try {
-    const comment = await Comment.findByPk(req.params.id);
-    if (!comment) {
-      return res.status(404).json({ error: '评论不存在' });
-    }
-    await comment.destroy();
-    res.json({ message: '评论删除成功' });
-  } catch (error) {
-    res.status(500).json({ error: '删除评论失败' });
+router.delete('/delete/:id', checkMenuPermission('评论管理','can_delete'), catchAsync(async (req, res) => {
+  const comment = await Comment.findByPk(req.params.id);
+  if (!comment) {
+    return fail(res, '评论不存在', 404);
   }
-});
+  await comment.destroy();
+  success(res, null, '评论删除成功');
+}));
 
 // 导出评论
-router.get('/export', checkMenuPermission('评论管理','can_read'), async (req, res) => {
-  try {
-    const { content, user_id, blog_id, parent_id } = req.query;
+router.get('/export', checkMenuPermission('评论管理','can_read'), catchAsync(async (req, res) => {
+  const { content, user_id, blog_id, parent_id } = req.query;
 
-    // 构建查询条件
-    const whereConditions = {};
-    if (content) {
-      whereConditions.content = { [Op.like]: `%${content}%` };
-    }
-    if (user_id) {
-      whereConditions.user_id = user_id;
-    }
-    if (blog_id) {
-      whereConditions.blog_id = blog_id;
-    }
-    // 添加parent_id过滤支持
-    if (parent_id !== undefined) {
-      if (parent_id === 'main' || parent_id === 'null' || parent_id === null) {
-        whereConditions.parent_id = null;
-      } else {
-        whereConditions.parent_id = parseInt(parent_id);
-      }
-    }
-
-    const comments = await Comment.findAll({
-      where: whereConditions,
-      attributes: ['id', 'blog_id', 'user_id', 'content', 'parent_id', 'created_at'],
-      order: [['created_at', 'DESC']]
-    });
-
-    // 设置响应头
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', `attachment; filename=comments_${new Date().toISOString().split('T')[0]}.xlsx`);
-
-    // 构建Excel数据
-    const XLSX = require('xlsx');
-    const workbook = XLSX.utils.book_new();
-
-    const worksheetData = [
-      ['ID', '博客ID', '用户ID', '评论内容', '父评论ID', '创建时间'], // 表头
-      ...comments.map(comment => [
-        comment.id,
-        comment.blog_id,
-        comment.user_id,
-        comment.content,
-        comment.parent_id || '',
-        new Date(comment.created_at).toLocaleString('zh-CN')
-      ])
-    ];
-
-    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-    XLSX.utils.book_append_sheet(workbook, worksheet, '评论列表');
-
-    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    res.send(buffer);
-
-  } catch (error) {
-    console.error('导出评论失败:', error);
-    fail(res, '导出评论失败', 500);
+  // 构建查询条件
+  const whereConditions = {};
+  if (content) {
+    whereConditions.content = { [Op.like]: `%${content}%` };
   }
-});
+  if (user_id) {
+    whereConditions.user_id = user_id;
+  }
+  if (blog_id) {
+    whereConditions.blog_id = blog_id;
+  }
+  // 添加parent_id过滤支持
+  if (parent_id !== undefined) {
+    if (parent_id === 'main' || parent_id === 'null' || parent_id === null) {
+      whereConditions.parent_id = null;
+    } else {
+      whereConditions.parent_id = parseInt(parent_id);
+    }
+  }
+
+  const comments = await Comment.findAll({
+    where: whereConditions,
+    attributes: ['id', 'blog_id', 'user_id', 'content', 'parent_id', 'created_at'],
+    order: [['created_at', 'DESC']]
+  });
+
+  // 设置响应头
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', `attachment; filename=comments_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+  // 构建Excel数据
+  const XLSX = require('xlsx');
+  const workbook = XLSX.utils.book_new();
+
+  const worksheetData = [
+    ['ID', '博客ID', '用户ID', '评论内容', '父评论ID', '创建时间'], // 表头
+    ...comments.map(comment => [
+      comment.id,
+      comment.blog_id,
+      comment.user_id,
+      comment.content,
+      comment.parent_id || '',
+      new Date(comment.created_at).toLocaleString('zh-CN')
+    ])
+  ];
+
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, '评论列表');
+
+  const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+  res.send(buffer);
+}));
 
 module.exports = router;

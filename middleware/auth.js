@@ -3,13 +3,16 @@ const jwt = require('jsonwebtoken');
 const { User, Role, RoleMenu, Menu } = require('../models/admin');
 const { mergePermissions } = require('../utils/tool');
 const { fail } = require('../utils/response');
+const { authLogger } = require('../utils/logger');
 
 
 const authenticate = async (req, res, next) => {
+  let token = '';
+
   try {
     // 从请求头获取token
-    const token = req.headers.authorization?.split(' ')[1];
-    
+    token = req.headers.authorization?.split(' ')[1] || '';
+
     if (!token) {
       return fail(res, '未提供认证令牌', 401);
     }
@@ -34,6 +37,16 @@ const authenticate = async (req, res, next) => {
       }]
     });
 
+    if (!user) {
+      authLogger.tokenError(new Error('Invalid user'), req.ip, token);
+      return fail(res, '无效用户', 401);
+    }
+
+    if (!user.is_active) {
+      authLogger.tokenError(new Error('User account disabled'), req.ip, token);
+      return fail(res, '用户账户已被禁用', 403);
+    }
+
     req.user = {
       ...user.get({ plain: true }),
     };
@@ -49,26 +62,15 @@ const authenticate = async (req, res, next) => {
 
     // req.menus去重，并且以有权限的为主，因为可能有多个角色，每个角色菜单都不一样，以有权限的角色为主
     req.menus = mergePermissions(req.menus);
-
-    
-    if (!user) {
-      return fail(res, '无效用户', 401);
-    }
-    
-    if (!user.is_active) {
-      return fail(res, '用户账户已被禁用', 403);
-    }
-
-    req.user = {
-      ...user.get({ plain: true }),
-    };
     
     next();
   } catch (error) {
+    authLogger.tokenError(error, req.ip, token);
+
     if (error.name === 'TokenExpiredError') {
       return fail(res, '令牌已过期', 401);
     }
-    console.log('认证错误:', error);
+
     fail(res, '无效令牌', 401);
   }
 };

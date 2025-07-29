@@ -2,41 +2,62 @@
 const express = require('express');
 const router = express.Router();
 const { registerUser, loginUser } = require('../utils/auth');
-const jwt = require('jsonwebtoken');
-const { success, fail } = require('../utils/response');
+const { success } = require('../utils/response');
+
+// 导入验证和安全中间件
+const { loginRateLimit, validateInput } = require('../middleware/security');
+const { userValidation } = require('../utils/validation');
+const { authLogger } = require('../utils/logger');
+const { catchAsync } = require('../middleware/errorHandler');
 
 // 用户注册
-router.post('/register', async (req, res) => {
-  try {
+router.post('/register',
+  validateInput(userValidation.register),
+  catchAsync(async (req, res) => {
     const { username, password, email, is_active, roles } = req.body;
     const result = await registerUser(username, password, email, is_active, roles);
+
+    // 记录注册日志
+    authLogger.login(username, req.ip, true, 'User registered');
+
     success(res, result, '注册成功', 200);
-  } catch (error) {
-    fail(res, error.message || '注册失败', 400);
-  }
-});
+  })
+);
 
 // 用户登录
-router.post('/login', async (req, res) => {
-  try {
+router.post('/login',
+  loginRateLimit,
+  validateInput(userValidation.login),
+  catchAsync(async (req, res) => {
     const { username, password } = req.body;
-    const result = await loginUser(username, password);
-    success(res, result, '登录成功');
-  } catch (error) {
-    fail(res, error.message || '登录失败', 401);
-  }
-});
+
+    try {
+      const result = await loginUser(username, password);
+
+      // 记录成功登录
+      authLogger.login(username, req.ip, true);
+
+      success(res, result, '登录成功');
+    } catch (error) {
+      // 记录失败登录
+      authLogger.login(username, req.ip, false, error.message);
+
+      // 重新抛出错误让catchAsync处理
+      throw error;
+    }
+  })
+);
 
 // 用户登出
 router.post('/logout', (req, res) => {
-  // 设置jwt过期
-  jwt.sign({}, process.env.JWT_SECRET, {
-    expiresIn: 1, // 1秒后过期
-  },(err,token)=>{
-    if(err){
-      console.error('JWT签名失败:', err);
-    }
-  });
+  // 记录登出日志
+  if (req.user) {
+    authLogger.logout(req.user.username, req.ip);
+  }
+
+  // JWT是无状态的，服务端无法直接使token失效
+  // 实际的登出逻辑应该在客户端清除token
+  // 这里只是返回成功响应，实际的token失效由客户端处理
   success(res, null, '用户已登出');
 });
 

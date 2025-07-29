@@ -1,4 +1,3 @@
-let createError = require('http-errors');
 let express = require('express');
 let path = require('path');
 let cookieParser = require('cookie-parser');
@@ -15,9 +14,16 @@ let blogRouter = require('./routes/blog');
 let commentRouter = require('./routes/comment');
 let tagRouter = require('./routes/tag');
 let uploadRouter = require('./routes/upload');
+let systemRouter = require('./routes/system');
 
 const { sequelize } = require('./models');
 const cors = require('cors');
+
+// 导入新的中间件和工具
+const { securityHeaders, apiRateLimit, sanitizeInput, xssProtection } = require('./middleware/security');
+const { globalErrorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { expressLogger } = require('./utils/logger');
+const { systemMonitor } = require('./utils/performance');
 
 let app = express();
 
@@ -25,9 +31,15 @@ let app = express();
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 
+// 安全中间件
+app.use(securityHeaders);
+app.use(apiRateLimit);
+
+// 基础中间件
 app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(expressLogger);
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -54,6 +66,10 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization','X-Requested-With','Content-Type']
 }));
 
+// 安全过滤中间件
+app.use(sanitizeInput);
+app.use(xssProtection);
+
 app.use('/api/', auth);
 app.use('/api/user', userRouter);
 app.use('/api/role', roleRouter);
@@ -63,23 +79,14 @@ app.use('/api/blog', blogRouter);
 app.use('/api/comments', commentRouter);
 app.use('/api/tag', tagRouter);
 app.use('/api/upload', uploadRouter);
+app.use('/api/system', systemRouter);
 
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+// 404错误处理
+app.use(notFoundHandler);
 
-// error handler
-app.use(function(err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+// 全局错误处理
+app.use(globalErrorHandler);
 
 // 数据库连接和同步
 const initDatabase = async () => {
@@ -98,6 +105,13 @@ const initDatabase = async () => {
     // 初始化角色和权限
     require('./utils/initRoles')();
     console.log('✅ 初始数据加载完成');
+
+    // 启动系统监控
+    if (process.env.NODE_ENV === 'production') {
+      systemMonitor.startMonitoring(300000); // 5分钟监控一次
+    } else {
+      systemMonitor.startMonitoring(60000); // 开发环境1分钟监控一次
+    }
 
   } catch (error) {
     console.error('❌ 数据库初始化失败:', error.message);
