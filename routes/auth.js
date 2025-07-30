@@ -6,19 +6,27 @@ const { success } = require('../utils/response');
 
 // 导入验证和安全中间件
 const { userValidation } = require('../utils/validation');
-const { authLogger } = require('../utils/logger');
+const { auth, business, security } = require('../utils/logger');
 const { catchAsync } = require('../middleware/errorHandler');
 
 // 用户注册
 router.post('/register',
   catchAsync(async (req, res) => {
     const { username, password, email, is_active, roles } = req.body;
-    const result = await registerUser(username, password, email, is_active, roles);
 
-    // 记录注册日志
-    authLogger.login(username, req.ip, true, 'User registered');
+    try {
+      const result = await registerUser(username, password, email, is_active, roles);
 
-    success(res, result, '注册成功', 200);
+      // 记录注册日志
+      auth.login(username, req.ip, true, 'User registered');
+      business.userCreated(result.user.id, 'system', req.ip);
+
+      success(res, result, '注册成功', 200);
+    } catch (error) {
+      // 记录注册失败日志
+      auth.login(username, req.ip, false, error.message);
+      throw error;
+    }
   })
 );
 
@@ -31,12 +39,12 @@ router.post('/login',
       const result = await loginUser(username, password);
 
       // 记录成功登录
-      authLogger.login(username, req.ip, true);
+      auth.login(username, req.ip, true);
 
       success(res, result, '登录成功');
     } catch (error) {
       // 记录失败登录
-      authLogger.login(username, req.ip, false, error.message);
+      auth.login(username, req.ip, false, error.message);
 
       // 重新抛出错误让catchAsync处理
       throw error;
@@ -48,7 +56,7 @@ router.post('/login',
 router.post('/logout', (req, res) => {
   // 记录登出日志
   if (req.user) {
-    authLogger.logout(req.user.username, req.ip);
+    auth.logout(req.user.username, req.ip);
   }
 
   // JWT是无状态的，服务端无法直接使token失效

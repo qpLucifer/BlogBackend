@@ -8,7 +8,8 @@ const { success, fail } = require('../utils/response');
 
 // 导入安全中间件
 const { catchAsync } = require('../middleware/errorHandler');
-const { securityLogger } = require('../utils/logger');
+const { security } = require('../utils/logger');
+const { logFileUpload } = require('../middleware/securityLogger');
 
 const router = express.Router();
 
@@ -52,6 +53,7 @@ const upload = multer({
 // 上传图片接口
 router.post('/image',
   checkMenuPermission('博客管理','can_create'),
+  logFileUpload,
   upload.single('file'),
   catchAsync(async (req, res) => {
     if (!req.file) {
@@ -59,7 +61,7 @@ router.post('/image',
     }
 
     // 记录上传日志
-    securityLogger.fileUpload(
+    security.fileUpload(
       req.file.filename,
       req.file.size,
       req.file.mimetype,

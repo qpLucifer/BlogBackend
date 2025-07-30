@@ -10,7 +10,7 @@ const { success, fail } = require('../utils/response');
 // 导入验证和性能监控
 const { blogValidation, paginationValidation } = require('../utils/validation');
 const { catchAsync } = require('../middleware/errorHandler');
-const { businessLogger } = require('../utils/logger');
+const { business, security } = require('../utils/logger');
 
 // 需要认证
 router.use(authenticate);
@@ -165,7 +165,14 @@ router.post('/add',
 
     // 记录业务日志
     if (is_published) {
-      businessLogger.blogPublished(blog.id, author_id, title);
+      business.blogPublished(blog.id, author_id, title);
+    } else {
+      business.info('Blog created as draft', {
+        blogId: blog.id,
+        authorId: author_id,
+        title: title.substring(0, 50),
+        timestamp: new Date().toISOString()
+      });
     }
 
     success(res, blog, '新增博客成功', 200);
@@ -180,10 +187,26 @@ router.put('/update/:id', checkMenuPermission('博客管理','can_update'), catc
   if (!blog) {
     return fail(res, '博客不存在', 404);
   }
+
+  const wasPublished = blog.is_published;
   await blog.update({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });
   if (tags) {
     await blog.setTags(tags);
   }
+
+  // 记录业务日志
+  if (!wasPublished && is_published) {
+    business.blogPublished(blog.id, author_id, title);
+  } else {
+    business.info('Blog updated', {
+      blogId: blog.id,
+      authorId: author_id,
+      title: title.substring(0, 50),
+      isPublished: is_published,
+      timestamp: new Date().toISOString()
+    });
+  }
+
   success(res, blog, '更新博客成功');
 }));
 

@@ -8,6 +8,7 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
+const { setupLogs } = require('./setup-logs');
 
 console.log('🚀 启动前检查...\n');
 
@@ -70,16 +71,16 @@ function checkEnvFile() {
   return true;
 }
 
-// 3. 检查必需的目录
+// 3. 检查必需的目录和初始化日志系统
 function checkDirectories() {
   console.log('\n📁 检查必需的目录...');
-  
+
   const dirs = [
     'public',
     'public/uploads',
     'logs'
   ];
-  
+
   dirs.forEach(dir => {
     const dirPath = path.join(__dirname, '../', dir);
     if (!fs.existsSync(dirPath)) {
@@ -89,7 +90,17 @@ function checkDirectories() {
       console.log(`   ✅ 目录存在: ${dir}`);
     }
   });
-  
+
+  // 初始化日志系统
+  console.log('\n📝 初始化日志系统...');
+  try {
+    setupLogs();
+    console.log('   ✅ 日志系统初始化完成');
+  } catch (error) {
+    console.log('   ❌ 日志系统初始化失败:', error.message);
+    return false;
+  }
+
   return true;
 }
 

@@ -8,7 +8,9 @@
     "start": "node ./scripts/pre-start.js && node ./bin/www",
     "start:skip-check": "node ./bin/www",
     "pre-start": "node ./scripts/pre-start.js",
-    "db": "node ./scripts/db-manager.js"
+    "db": "node ./scripts/db-manager.js",
+    "setup-logs": "node ./scripts/setup-logs.js",
+    "logs:clean": "node ./scripts/setup-logs.js && find ./logs -name '*.log' -mtime +30 -delete"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -28,6 +30,7 @@
     "mysql2": "^3.14.1",
     "sequelize": "^6.37.7",
     "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
