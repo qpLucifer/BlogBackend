@@ -1,220 +1,91 @@
-// routes/logs.js - 日志管理路由
+// routes/logs.js - 简化的日志管理路由
 const express = require('express');
 const router = express.Router();
-const fs = require('fs').promises;
-const path = require('path');
 const { success, fail } = require('../utils/response');
 const { catchAsync } = require('../middleware/errorHandler');
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
-const { logCleanup, security } = require('../utils/logger');
+const { UserLog } = require('../models/admin');
+const { Op } = require('sequelize');
 
 // 需要认证
 router.use(authenticate);
 
-// 获取日志文件列表
-router.get('/files',
+// 获取操作日志列表
+router.get('/list',
   checkMenuPermission('日志管理', 'can_read'),
   catchAsync(async (req, res) => {
-    const logsDir = path.join(__dirname, '../logs');
-    const logTypes = ['error', 'auth', 'business', 'system', 'api', 'security', 'database'];
+    const { 
+      username, 
+      action, 
+      module, 
+      ip_address, 
+      status,
+      start_date,
+      end_date,
+      pageSize = 20, 
+      currentPage = 1 
+    } = req.query;
 
-    try {
-      const logFiles = [];
-
-      // 遍历每个日志类型目录
-      for (const type of logTypes) {
-        const typeDir = path.join(logsDir, type);
-
-        try {
-          const files = await fs.readdir(typeDir);
-
-          for (const file of files) {
-            if (file.endsWith('.log')) {
-              const filePath = path.join(typeDir, file);
-              const stats = await fs.stat(filePath);
-
-              logFiles.push({
-                name: file,
-                size: stats.size,
-                modified: stats.mtime,
-                type: type,
-                path: `${type}/${file}`
-              });
-            }
-          }
-        } catch (error) {
-          // 如果某个类型目录不存在，跳过
-          if (error.code !== 'ENOENT') {
-            console.error(`Error reading ${type} logs:`, error);
-          }
-        }
-      }
-
-      // 按修改时间排序
-      logFiles.sort((a, b) => new Date(b.modified) - new Date(a.modified));
-
-      success(res, logFiles, '获取日志文件列表成功');
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        success(res, [], '日志目录不存在');
-      } else {
-        throw error;
-      }
-    }
-  })
-);
-
-// 读取日志文件内容
-router.get('/content/:type/:filename',
-  checkMenuPermission('日志管理', 'can_read'),
-  catchAsync(async (req, res) => {
-    const { type, filename } = req.params;
-    const { page = 1, pageSize = 100, level, search } = req.query;
-
-    // 安全检查：只允许读取.log文件和有效的类型
-    if (!filename.endsWith('.log')) {
-      return fail(res, '无效的文件类型', 400);
-    }
-
-    const validTypes = ['error', 'auth', 'business', 'system', 'api', 'security', 'database'];
-    if (!validTypes.includes(type)) {
-      return fail(res, '无效的日志类型', 400);
-    }
-
-    const filePath = path.join(__dirname, '../logs', type, filename);
+    // 构建查询条件
+    const whereConditions = {};
     
-    try {
-      const content = await fs.readFile(filePath, 'utf8');
-      const lines = content.split('\n').filter(line => line.trim());
-      
-      // 解析日志行
-      let logs = lines.map((line, index) => {
-        try {
-          // 尝试解析JSON格式的日志
-          const logData = JSON.parse(line);
-          return {
-            id: index + 1,
-            timestamp: logData.timestamp,
-            level: logData.level,
-            message: logData.message,
-            meta: logData.meta || {},
-            raw: line
-          };
-        } catch {
-          // 如果不是JSON格式，按普通文本处理
-          const match = line.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)\s+(\w+):\s+(.+)$/);
-          if (match) {
-            return {
-              id: index + 1,
-              timestamp: match[1],
-              level: match[2],
-              message: match[3],
-              meta: {},
-              raw: line
-            };
-          }
-          return {
-            id: index + 1,
-            timestamp: new Date().toISOString(),
-            level: 'info',
-            message: line,
-            meta: {},
-            raw: line
-          };
-        }
-      });
-      
-      // 过滤
-      if (level) {
-        logs = logs.filter(log => log.level === level);
-      }
-      
-      if (search) {
-        logs = logs.filter(log => 
-          log.message.toLowerCase().includes(search.toLowerCase()) ||
-          log.raw.toLowerCase().includes(search.toLowerCase())
-        );
-      }
-      
-      // 分页
-      const total = logs.length;
-      const startIndex = (page - 1) * pageSize;
-      const endIndex = startIndex + parseInt(pageSize);
-      const paginatedLogs = logs.slice(startIndex, endIndex);
-      
-      success(res, {
-        list: paginatedLogs,
-        total,
-        page: parseInt(page),
-        pageSize: parseInt(pageSize),
-        filename
-      }, '读取日志内容成功');
-      
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        return fail(res, '日志文件不存在', 404);
-      }
-      throw error;
+    if (username) {
+      whereConditions.username = { [Op.like]: `%${username}%` };
     }
-  })
-);
-
-// 下载日志文件
-router.get('/download/:type/:filename',
-  checkMenuPermission('日志管理', 'can_read'),
-  catchAsync(async (req, res) => {
-    const { type, filename } = req.params;
-
-    // 安全检查
-    if (!filename.endsWith('.log')) {
-      return fail(res, '无效的文件类型', 400);
+    
+    if (action) {
+      whereConditions.action = action;
+    }
+    
+    if (module) {
+      whereConditions.module = module;
+    }
+    
+    if (ip_address) {
+      whereConditions.ip_address = { [Op.like]: `%${ip_address}%` };
+    }
+    
+    if (status) {
+      whereConditions.status = status;
+    }
+    
+    if (start_date && end_date) {
+      whereConditions.created_at = {
+        [Op.between]: [new Date(start_date), new Date(end_date)]
+      };
+    } else if (start_date) {
+      whereConditions.created_at = {
+        [Op.gte]: new Date(start_date)
+      };
+    } else if (end_date) {
+      whereConditions.created_at = {
+        [Op.lte]: new Date(end_date)
+      };
     }
 
-    const validTypes = ['error', 'auth', 'business', 'system', 'api', 'security', 'database'];
-    if (!validTypes.includes(type)) {
-      return fail(res, '无效的日志类型', 400);
-    }
+    // 获取总数
+    const total = await UserLog.count({ where: whereConditions });
 
-    const filePath = path.join(__dirname, '../logs', type, filename);
+    // 获取分页数据
+    const logs = await UserLog.findAll({
+      where: whereConditions,
+      attributes: [
+        'id', 'user_id', 'username', 'action', 'module', 
+        'target_id', 'target_name', 'ip_address', 'user_agent', 
+        'status', 'details', 'created_at'
+      ],
+      limit: parseInt(pageSize),
+      offset: (parseInt(currentPage) - 1) * parseInt(pageSize),
+      order: [['created_at', 'DESC']]
+    });
 
-    try {
-      await fs.access(filePath);
-
-      // 记录下载日志
-      if (security) {
-        security.dataExport(req.user.id, 'log_file', 1, req.ip);
-      }
-
-      res.download(filePath, filename);
-    } catch (error) {
-      if (error.code === 'ENOENT') {
-        return fail(res, '文件不存在', 404);
-      }
-      throw error;
-    }
-  })
-);
-
-// 清理日志文件
-router.delete('/clean',
-  checkMenuPermission('日志管理', 'can_delete'),
-  catchAsync(async (req, res) => {
-    const { days = 7 } = req.body;
-
-    try {
-      // 使用新的日志清理工具
-      const result = await logCleanup.cleanOldLogs(parseInt(days));
-
-      // 记录清理操作
-      if (security) {
-        security.dataExport(req.user.id, 'log_cleanup', result.deletedCount, req.ip);
-      }
-
-      success(res, result, `清理了 ${result.deletedCount} 个过期日志文件`);
-    } catch (error) {
-      throw error;
-    }
+    success(res, {
+      list: logs,
+      total: total,
+      pageSize: parseInt(pageSize),
+      currentPage: parseInt(currentPage),
+    }, '获取操作日志成功');
   })
 );
 
@@ -223,27 +94,167 @@ router.get('/stats',
   checkMenuPermission('日志管理', 'can_read'),
   catchAsync(async (req, res) => {
     try {
-      // 使用新的日志统计工具
-      const stats = await logCleanup.getLogStats();
+      // 获取今日日志数量
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
 
-      success(res, stats, '获取日志统计信息成功');
-    } catch (error) {
-      // 如果出错，返回默认统计信息
+      const todayCount = await UserLog.count({
+        where: {
+          created_at: {
+            [Op.between]: [today, tomorrow]
+          }
+        }
+      });
+
+      // 获取各模块日志数量
+      const moduleStats = await UserLog.findAll({
+        attributes: [
+          'module',
+          [UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'count']
+        ],
+        group: ['module'],
+        order: [[UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'DESC']]
+      });
+
+      // 获取各操作类型数量
+      const actionStats = await UserLog.findAll({
+        attributes: [
+          'action',
+          [UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'count']
+        ],
+        group: ['action'],
+        order: [[UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'DESC']]
+      });
+
+      // 获取最近7天的日志数量
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const recentCount = await UserLog.count({
+        where: {
+          created_at: {
+            [Op.gte]: sevenDaysAgo
+          }
+        }
+      });
+
       success(res, {
-        totalFiles: 0,
-        totalSize: 0,
-        fileTypes: {
-          error: 0,
-          auth: 0,
-          business: 0,
-          system: 0,
-          api: 0,
-          security: 0,
-          database: 0
-        },
-        recentLogs: []
+        todayCount,
+        recentCount,
+        moduleStats,
+        actionStats
+      }, '获取日志统计信息成功');
+    } catch (error) {
+      success(res, {
+        todayCount: 0,
+        recentCount: 0,
+        moduleStats: [],
+        actionStats: []
       }, '获取日志统计信息失败，返回默认值');
     }
+  })
+);
+
+// 清理日志
+router.delete('/clean',
+  checkMenuPermission('日志管理', 'can_delete'),
+  catchAsync(async (req, res) => {
+    const { days = 30 } = req.body;
+
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+
+      const result = await UserLog.destroy({
+        where: {
+          created_at: {
+            [Op.lt]: cutoffDate
+          }
+        }
+      });
+
+      success(res, { deletedCount: result }, `清理了 ${result} 条过期日志记录`);
+    } catch (error) {
+      throw error;
+    }
+  })
+);
+
+// 导出日志
+router.get('/export',
+  checkMenuPermission('日志管理', 'can_read'),
+  catchAsync(async (req, res) => {
+    const { 
+      username, 
+      action, 
+      module, 
+      ip_address, 
+      status,
+      start_date,
+      end_date
+    } = req.query;
+
+    // 构建查询条件
+    const whereConditions = {};
+    
+    if (username) {
+      whereConditions.username = { [Op.like]: `%${username}%` };
+    }
+    
+    if (action) {
+      whereConditions.action = action;
+    }
+    
+    if (module) {
+      whereConditions.module = module;
+    }
+    
+    if (ip_address) {
+      whereConditions.ip_address = { [Op.like]: `%${ip_address}%` };
+    }
+    
+    if (status) {
+      whereConditions.status = status;
+    }
+    
+    if (start_date && end_date) {
+      whereConditions.created_at = {
+        [Op.between]: [new Date(start_date), new Date(end_date)]
+      };
+    }
+
+    const logs = await UserLog.findAll({
+      where: whereConditions,
+      attributes: [
+        'id', 'username', 'action', 'module', 
+        'target_name', 'ip_address', 'status', 'created_at'
+      ],
+      order: [['created_at', 'DESC']],
+      limit: 10000 // 限制导出数量
+    });
+
+    // 转换为CSV格式
+    const csvHeader = 'ID,用户名,操作,模块,目标,IP地址,状态,时间\n';
+    const csvData = logs.map(log => {
+      return [
+        log.id,
+        log.username || '',
+        log.action,
+        log.module,
+        log.target_name || '',
+        log.ip_address || '',
+        log.status,
+        log.created_at,
+      ].join(',');
+    }).join('\n');
+
+    const csv = csvHeader + csvData;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=logs_${new Date().toISOString().split('T')[0]}.csv`);
+    res.send('\uFEFF' + csv); // 添加BOM以支持中文
   })
 );
 

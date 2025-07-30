@@ -6,6 +6,7 @@ const { BlogSentence } = require('../models/blogSentence');
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
+const SimpleLogger = require('../utils/logger');
 
 // 需要认证
 router.use(authenticate);
@@ -66,6 +67,20 @@ router.post('/add', checkMenuPermission('每日一句','can_create'), catchAsync
         day_sentence: day_sentence,
         auth: auth
     });
+
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+        req.user.id,
+        req.user.username,
+        'create',
+        'daySentence',
+        newSentence.id,
+        `${auth}: ${day_sentence.substring(0, 30)}...`,
+        req.ip,
+        req.get('User-Agent'),
+        { day_sentence, auth }
+    );
+
     success(res, { id: newSentence.id }, '添加每日一句成功', 200);
 }));
 
@@ -87,9 +102,24 @@ router.put('/update/:id', checkMenuPermission('每日一句','can_update'), catc
     if (!sentence) {
         return fail(res, '每日一句不存在', 404);
     }
+
     sentence.day_sentence = day_sentence;
     sentence.auth = auth;
     await sentence.save();
+
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+        req.user.id,
+        req.user.username,
+        'update',
+        'daySentence',
+        id,
+        `${auth}: ${day_sentence.substring(0, 30)}...`,
+        req.ip,
+        req.get('User-Agent'),
+        { day_sentence, auth }
+    );
+
     success(res, null, '更新每日一句成功');
 }));
 
@@ -104,7 +134,22 @@ router.delete('/delete/:id', checkMenuPermission('每日一句','can_delete'), c
     if (!sentence) {
         return fail(res, '每日一句不存在', 404);
     }
+
+    const targetName = `${sentence.auth}: ${sentence.day_sentence.substring(0, 30)}...`;
     await sentence.destroy();
+
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+        req.user.id,
+        req.user.username,
+        'delete',
+        'daySentence',
+        id,
+        targetName,
+        req.ip,
+        req.get('User-Agent')
+    );
+
     success(res, null, '删除每日一句成功');
 }));
 

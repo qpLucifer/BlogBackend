@@ -21,8 +21,6 @@ const cors = require('cors');
 
 // 导入新的中间件和工具
 const { globalErrorHandler, notFoundHandler } = require('./middleware/errorHandler');
-const { expressLogger } = require('./utils/logger');
-const { logUnauthorizedAccess, logSuspiciousActivity } = require('./middleware/securityLogger');
 let app = express();
 
 // view engine setup
@@ -32,9 +30,6 @@ app.set('view engine', 'jade');
 
 // 基础中间件
 app.use(logger('dev'));
-app.use(expressLogger);
-app.use(logUnauthorizedAccess);
-app.use(logSuspiciousActivity);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use(cookieParser());

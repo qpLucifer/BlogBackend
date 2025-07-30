@@ -1,5 +1,4 @@
 // middleware/errorHandler.js - 统一错误处理
-const { apiLogger } = require('../utils/logger');
 
 // 资源不存在错误类 - 用于404处理
 class NotFoundError extends Error {
@@ -17,10 +16,6 @@ class NotFoundError extends Error {
 const globalErrorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || '服务器内部错误';
-
-  // 记录错误日志
-  apiLogger.error(req, err);
-
   // 发送错误响应
   res.status(statusCode).json({
     code: statusCode,

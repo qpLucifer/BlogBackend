@@ -6,7 +6,7 @@ const { success } = require('../utils/response');
 
 // 导入验证和安全中间件
 const { userValidation } = require('../utils/validation');
-const { auth, business, security } = require('../utils/logger');
+const SimpleLogger = require('../utils/logger');
 const { catchAsync } = require('../middleware/errorHandler');
 
 // 用户注册
@@ -18,13 +18,12 @@ router.post('/register',
       const result = await registerUser(username, password, email, is_active, roles);
 
       // 记录注册日志
-      auth.login(username, req.ip, true, 'User registered');
-      business.userCreated(result.user.id, 'system', req.ip);
+      await SimpleLogger.logLogin(username, req.ip, true, 'User registered', req.get('User-Agent'));
 
       success(res, result, '注册成功', 200);
     } catch (error) {
       // 记录注册失败日志
-      auth.login(username, req.ip, false, error.message);
+      await SimpleLogger.logLogin(username, req.ip, false, error.message, req.get('User-Agent'));
       throw error;
     }
   })
@@ -39,12 +38,12 @@ router.post('/login',
       const result = await loginUser(username, password);
 
       // 记录成功登录
-      auth.login(username, req.ip, true);
+      await SimpleLogger.logLogin(username, req.ip, true, '', req.get('User-Agent'));
 
       success(res, result, '登录成功');
     } catch (error) {
       // 记录失败登录
-      auth.login(username, req.ip, false, error.message);
+      await SimpleLogger.logLogin(username, req.ip, false, error.message, req.get('User-Agent'));
 
       // 重新抛出错误让catchAsync处理
       throw error;
@@ -53,10 +52,10 @@ router.post('/login',
 );
 
 // 用户登出
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   // 记录登出日志
   if (req.user) {
-    auth.logout(req.user.username, req.ip);
+    await SimpleLogger.logLogout(req.user.username, req.ip, req.get('User-Agent'));
   }
 
   // JWT是无状态的，服务端无法直接使token失效

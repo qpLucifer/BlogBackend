@@ -1,6 +1,5 @@
 // models/index.js - 数据库模型
 const { Sequelize } = require('sequelize');
-const { setupDatabaseLogging } = require('../middleware/dbLogger');
 
 // 从环境变量获取数据库配置
 const dialect = process.env.DB_DIALECT || 'mysql';
@@ -54,8 +53,7 @@ const sequelize = new Sequelize(database, username, password, {
   isolationLevel: 'READ_COMMITTED'
 });
 
-// 设置数据库日志记录
-setupDatabaseLogging(sequelize);
+
 
 // 在开发环境下输出连接信息
 if (process.env.NODE_ENV === 'development') {

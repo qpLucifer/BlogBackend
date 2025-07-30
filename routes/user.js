@@ -10,6 +10,7 @@ const { Op } = require('sequelize');
 
 // 导入验证和性能监控
 const { catchAsync } = require('../middleware/errorHandler');
+const SimpleLogger = require('../utils/logger');
 
 // 需要认证
 router.use(authenticate);
@@ -75,6 +76,20 @@ router.post('/users',
     if (roles) {
       await user.setRoles(roles);
     }
+
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'create',
+      'user',
+      user.id,
+      username,
+      req.ip,
+      req.get('User-Agent'),
+      { email, roles }
+    );
+
     success(res, user, '新增用户成功', 200);
   })
 );
@@ -88,10 +103,26 @@ router.put('/users/:id',
     if (!user) {
       return fail(res, '用户不存在', 404);
     }
+
+    const oldUsername = user.username;
     await user.update({ username, email, is_active });
     if (roles) {
       await user.setRoles(roles);
     }
+
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'update',
+      'user',
+      user.id,
+      username || oldUsername,
+      req.ip,
+      req.get('User-Agent'),
+      { email, is_active, roles }
+    );
+
     success(res, user, '更新用户成功');
   })
 );
@@ -113,7 +144,22 @@ router.delete('/users/:id',checkMenuPermission('用户管理','can_delete'), cat
   if (!user) {
     return fail(res, '用户不存在', 404);
   }
+
+  const username = user.username;
   await user.destroy();
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'delete',
+    'user',
+    req.params.id,
+    username,
+    req.ip,
+    req.get('User-Agent')
+  );
+
   success(res, null, '用户删除成功');
 }));
 

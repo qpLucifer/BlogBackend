@@ -3,8 +3,6 @@ const jwt = require('jsonwebtoken');
 const { User, Role, RoleMenu, Menu } = require('../models/admin');
 const { mergePermissions } = require('../utils/tool');
 const { fail } = require('../utils/response');
-const { authLogger } = require('../utils/logger');
-
 
 const authenticate = async (req, res, next) => {
   let token = '';
@@ -38,12 +36,10 @@ const authenticate = async (req, res, next) => {
     });
 
     if (!user) {
-      authLogger.tokenError(new Error('Invalid user'), req.ip, token);
       return fail(res, '无效用户', 401);
     }
 
     if (!user.is_active) {
-      authLogger.tokenError(new Error('User account disabled'), req.ip, token);
       return fail(res, '用户账户已被禁用', 403);
     }
 
@@ -65,8 +61,6 @@ const authenticate = async (req, res, next) => {
     
     next();
   } catch (error) {
-    authLogger.tokenError(error, req.ip, token);
-
     if (error.name === 'TokenExpiredError') {
       return fail(res, '令牌已过期', 401);
     }

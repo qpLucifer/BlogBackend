@@ -235,4 +235,70 @@ Menu.belongsToMany(Role, {
   onUpdate: 'CASCADE'
 });
 
-module.exports = { User, Role, UserRole, Menu, RoleMenu };
+// 用户操作日志模型
+const UserLog = sequelize.define(
+  "UserLog",
+  {
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    user_id: { type: DataTypes.INTEGER, allowNull: true }, // 允许为空，记录未登录用户的操作
+    username: { type: DataTypes.STRING(50), allowNull: true }, // 冗余字段，方便查询
+    action: { type: DataTypes.STRING(50), allowNull: false }, // 操作类型：login, logout, create, update, delete, view
+    module: { type: DataTypes.STRING(50), allowNull: false }, // 模块名称：user, blog, comment, tag, role, menu
+    target_id: { type: DataTypes.INTEGER, allowNull: true }, // 操作目标ID
+    target_name: { type: DataTypes.STRING(200), allowNull: true }, // 操作目标名称
+    ip_address: { type: DataTypes.STRING(45), allowNull: true }, // IP地址，支持IPv6
+    user_agent: { type: DataTypes.STRING(500), allowNull: true }, // 用户代理
+    details: { type: DataTypes.TEXT, allowNull: true }, // 详细信息，JSON格式
+    status: { type: DataTypes.STRING(20), defaultValue: 'success' }, // 操作状态：success, failed, error
+  },
+  {
+    tableName: "user_logs",
+    timestamps: true,
+    underscored: true,
+    indexes: [
+      {
+        fields: ['user_id'], // 用户索引
+        name: 'user_log_user_idx'
+      },
+      {
+        fields: ['action'], // 操作类型索引
+        name: 'user_log_action_idx'
+      },
+      {
+        fields: ['module'], // 模块索引
+        name: 'user_log_module_idx'
+      },
+      {
+        fields: ['ip_address'], // IP地址索引
+        name: 'user_log_ip_idx'
+      },
+      {
+        fields: ['created_at'], // 创建时间索引
+        name: 'user_log_created_idx'
+      },
+      {
+        fields: ['user_id', 'created_at'], // 复合索引
+        name: 'user_log_user_created_idx'
+      },
+      {
+        fields: ['action', 'module'], // 复合索引
+        name: 'user_log_action_module_idx'
+      }
+    ]
+  }
+);
+
+// 设置关联
+UserLog.belongsTo(User, {
+  foreignKey: "user_id",
+  as: "user",
+  constraints: false
+});
+
+User.hasMany(UserLog, {
+  foreignKey: "user_id",
+  as: "logs",
+  constraints: false
+});
+
+module.exports = { User, Role, UserRole, Menu, RoleMenu, UserLog };
