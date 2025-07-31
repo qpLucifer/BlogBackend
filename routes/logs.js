@@ -24,7 +24,7 @@ router.get('/list',
       status,
       start_date,
       end_date,
-      pageSize = 20,
+      pageSize = 10,
       currentPage = 1
     } = req.query;
 
