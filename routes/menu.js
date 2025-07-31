@@ -7,6 +7,7 @@ const { buildMenuTree } = require('../utils/tool');
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
+const SimpleLogger = require('../utils/logger');
 
 // 需要认证
 router.use(authenticate);
@@ -22,6 +23,20 @@ router.get('/', checkMenuPermission('菜单管理','can_read'), catchAsync(async
 // 新建菜单
 router.post('/', checkMenuPermission('菜单管理','can_create'), catchAsync(async (req, res) => {
   const menu = await Menu.create(req.body);
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'create',
+    'menu',
+    menu.id,
+    menu.name,
+    req.ip,
+    req.get('User-Agent'),
+    { path: menu.path, icon: menu.icon, order: menu.order }
+  );
+
   success(res, menu, '创建菜单成功', 200);
 }));
 
@@ -29,7 +44,29 @@ router.post('/', checkMenuPermission('菜单管理','can_create'), catchAsync(as
 router.put('/:id', checkMenuPermission('菜单管理','can_update'), catchAsync(async (req, res) => {
   const menu = await Menu.findByPk(req.params.id);
   if (!menu) return fail(res, '菜单不存在', 404);
+
+  const oldName = menu.name;
+  const oldPath = menu.path;
   await menu.update(req.body);
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'update',
+    'menu',
+    menu.id,
+    menu.name,
+    req.ip,
+    req.get('User-Agent'),
+    {
+      old_name: oldName,
+      new_name: menu.name,
+      old_path: oldPath,
+      new_path: menu.path
+    }
+  );
+
   success(res, menu, '更新菜单成功');
 }));
 
@@ -37,7 +74,24 @@ router.put('/:id', checkMenuPermission('菜单管理','can_update'), catchAsync(
 router.delete('/:id', checkMenuPermission('菜单管理','can_delete'), catchAsync(async (req, res) => {
   const menu = await Menu.findByPk(req.params.id);
   if (!menu) return fail(res, '菜单不存在', 404);
+
+  const menuName = menu.name;
+  const menuPath = menu.path;
   await menu.destroy();
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'delete',
+    'menu',
+    req.params.id,
+    menuName,
+    req.ip,
+    req.get('User-Agent'),
+    { deleted_name: menuName, deleted_path: menuPath }
+  );
+
   success(res, null, '删除菜单成功');
 }));
 

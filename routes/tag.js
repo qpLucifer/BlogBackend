@@ -6,6 +6,7 @@ const { Tag } = require('../models/blog');
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
+const SimpleLogger = require('../utils/logger');
 
 // 需要认证
 router.use(authenticate);
@@ -51,6 +52,20 @@ router.post('/add', checkMenuPermission('标签管理','can_create'), catchAsync
   const { name } = req.body;
   try {
     const tag = await Tag.create({ name });
+
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'create',
+      'tag',
+      tag.id,
+      tag.name,
+      req.ip,
+      req.get('User-Agent'),
+      { tag_name: name }
+    );
+
     success(res, tag, '新增标签成功', 200);
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {
@@ -67,7 +82,23 @@ router.put('/update/:id', checkMenuPermission('标签管理','can_update'), catc
   if (!tag) {
     return fail(res, '标签不存在', 404);
   }
+
+  const oldName = tag.name;
   await tag.update({ name });
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'update',
+    'tag',
+    tag.id,
+    tag.name,
+    req.ip,
+    req.get('User-Agent'),
+    { old_name: oldName, new_name: name }
+  );
+
   success(res, tag, '更新标签成功');
 }));
 
@@ -77,7 +108,23 @@ router.delete('/delete/:id', checkMenuPermission('标签管理','can_delete'), c
   if (!tag) {
     return fail(res, '标签不存在', 404);
   }
+
+  const tagName = tag.name;
   await tag.destroy();
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'delete',
+    'tag',
+    req.params.id,
+    tagName,
+    req.ip,
+    req.get('User-Agent'),
+    { deleted_name: tagName }
+  );
+
   success(res, null, '标签删除成功');
 }));
 

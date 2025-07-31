@@ -7,6 +7,7 @@ const { Role, Menu, RoleMenu} = require('../models/admin');
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
+const SimpleLogger = require('../utils/logger');
 
 // 需要认证
 router.use(authenticate);
@@ -68,6 +69,20 @@ router.post('/roles', checkMenuPermission('角色管理','can_create'), catchAsy
     // 批量创建关联
     await RoleMenu.bulkCreate(menuPermissions);
   }
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'create',
+    'role',
+    role.id,
+    role.name,
+    req.ip,
+    req.get('User-Agent'),
+    { description, menus: menus || [] }
+  );
+
   success(res, role, '创建角色成功');
 }));
 
@@ -78,6 +93,10 @@ router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catch
   if (!role) {
     return fail(res, '角色不存在', 404);
   }
+
+  const oldName = role.name;
+  const oldDescription = role.description;
+
   await role.update({ name, description });
   // 删除所有现有关联
   await RoleMenu.destroy({ where: { role_id: role.id } });
@@ -92,6 +111,26 @@ router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catch
     // 批量创建关联
     await RoleMenu.bulkCreate(menuPermissions);
   }
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'update',
+    'role',
+    role.id,
+    role.name,
+    req.ip,
+    req.get('User-Agent'),
+    {
+      old_name: oldName,
+      new_name: name,
+      old_description: oldDescription,
+      new_description: description,
+      menus: menus || []
+    }
+  );
+
   success(res, role, '更新角色成功');
 }));
 
@@ -101,7 +140,24 @@ router.delete('/roles/:id', checkMenuPermission('角色管理','can_delete'), ca
   if (!role) {
     return fail(res, '角色不存在', 404);
   }
+
+  const roleName = role.name;
+  const roleDescription = role.description;
   await role.destroy();
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'delete',
+    'role',
+    req.params.id,
+    roleName,
+    req.ip,
+    req.get('User-Agent'),
+    { deleted_name: roleName, deleted_description: roleDescription }
+  );
+
   success(res, null, '角色删除成功');
 }));
 

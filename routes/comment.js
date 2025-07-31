@@ -6,6 +6,7 @@ const { Comment } = require('../models/blog');
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
+const SimpleLogger = require('../utils/logger');
 
 // 需要认证
 router.use(authenticate);
@@ -107,7 +108,22 @@ router.get('/listPage', checkMenuPermission('评论管理','can_read'), catchAsy
 // 新增评论
 router.post('/add', checkMenuPermission('评论管理','can_create'), catchAsync(async (req, res) => {
   const { blog_id, user_id, content, parent_id } = req.body;
+
   const comment = await Comment.create({ blog_id, user_id, content, parent_id });
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'create',
+    'comment',
+    comment.id,
+    `评论ID:${comment.id}`,
+    req.ip,
+    req.get('User-Agent'),
+    { blog_id, user_id, parent_id }
+  );
+
   success(res, comment, '新增评论成功', 200);
 }));
 
@@ -118,7 +134,23 @@ router.put('/update/:id', checkMenuPermission('评论管理','can_update'), catc
   if (!comment) {
     return fail(res, '评论不存在', 404);
   }
+
+  const oldContent = comment.content;
   await comment.update({ content });
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'update',
+    'comment',
+    comment.id,
+    `评论ID:${comment.id}`,
+    req.ip,
+    req.get('User-Agent'),
+    { old_content: oldContent, new_content: content }
+  );
+
   success(res, comment, '更新评论成功');
 }));
 
@@ -128,7 +160,28 @@ router.delete('/delete/:id', checkMenuPermission('评论管理','can_delete'), c
   if (!comment) {
     return fail(res, '评论不存在', 404);
   }
+
+  const commentInfo = {
+    id: comment.id,
+    blog_id: comment.blog_id,
+    content: comment.content
+  };
+
   await comment.destroy();
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'delete',
+    'comment',
+    req.params.id,
+    `评论ID:${req.params.id}`,
+    req.ip,
+    req.get('User-Agent'),
+    commentInfo
+  );
+
   success(res, null, '评论删除成功');
 }));
 

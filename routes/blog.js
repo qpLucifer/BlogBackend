@@ -6,6 +6,7 @@ const { Blog, Tag, BlogTag, Comment} = require('../models/blog');
 const { User } = require('../models/admin');
 const { Op } = require("sequelize");
 const { success, fail } = require('../utils/response');
+const SimpleLogger = require('../utils/logger');
 
 // 导入验证和性能监控
 const { blogValidation, paginationValidation } = require('../utils/validation');
@@ -157,10 +158,24 @@ router.post('/add',
   checkMenuPermission('博客管理','can_create'),
   catchAsync(async (req, res) => {
     const { title, cover_image, content, summary, author_id, tags, is_published, is_choice, need_time } = req.body;
+
     const blog = await Blog.create({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });
     if (tags && tags.length > 0) {
       await blog.setTags(tags);
     }
+
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'create',
+      'blog',
+      blog.id,
+      blog.title,
+      req.ip,
+      req.get('User-Agent'),
+      { is_published, is_choice, tags: tags || [] }
+    );
 
     success(res, blog, '新增博客成功', 200);
   })
@@ -175,11 +190,32 @@ router.put('/update/:id', checkMenuPermission('博客管理','can_update'), catc
     return fail(res, '博客不存在', 404);
   }
 
-  const wasPublished = blog.is_published;
+  const oldTitle = blog.title;
+  const oldPublished = blog.is_published;
+
   await blog.update({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });
   if (tags) {
     await blog.setTags(tags);
   }
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'update',
+    'blog',
+    blog.id,
+    blog.title,
+    req.ip,
+    req.get('User-Agent'),
+    {
+      old_title: oldTitle,
+      new_title: title,
+      old_published: oldPublished,
+      new_published: is_published,
+      tags: tags || []
+    }
+  );
 
   success(res, blog, '更新博客成功');
 }));
@@ -190,7 +226,23 @@ router.delete('/delete/:id', checkMenuPermission('博客管理','can_delete'), c
   if (!blog) {
     return fail(res, '博客不存在', 404);
   }
+
+  const blogTitle = blog.title;
   await blog.destroy();
+
+  // 记录操作日志
+  await SimpleLogger.logOperation(
+    req.user.id,
+    req.user.username,
+    'delete',
+    'blog',
+    req.params.id,
+    blogTitle,
+    req.ip,
+    req.get('User-Agent'),
+    { deleted_title: blogTitle }
+  );
+
   success(res, null, '博客删除成功');
 }));
 
