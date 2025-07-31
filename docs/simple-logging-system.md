@@ -18,6 +18,7 @@ BlogBackend项目现在使用了一个简化的操作日志系统，专注于记
 | username | VARCHAR(50) | 用户名（冗余字段，方便查询） |
 | action | VARCHAR(50) | 操作类型：login, logout, create, update, delete, view |
 | module | VARCHAR(50) | 模块名称：auth, user, blog, comment, tag, role, menu, daySentence, upload |
+| log_type | VARCHAR(30) | 日志类型：operation, security, system, error |
 | target_id | INTEGER | 操作目标ID |
 | target_name | VARCHAR(200) | 操作目标名称 |
 | ip_address | VARCHAR(45) | IP地址（支持IPv6） |
@@ -61,7 +62,8 @@ await SimpleLogger.logOperation(
   newUser.username,      // 目标名称
   req.ip,                // IP地址
   req.get('User-Agent'), // 用户代理
-  { email, roles }       // 详细信息
+  { email, roles },      // 详细信息
+  'operation'            // 日志类型（可选，默认为'operation'）
 );
 
 // 更新博客
@@ -74,7 +76,8 @@ await SimpleLogger.logOperation(
   blog.title,
   req.ip,
   req.get('User-Agent'),
-  { title, content }
+  { title, content },
+  'operation'
 );
 
 // 删除评论
@@ -86,7 +89,23 @@ await SimpleLogger.logOperation(
   comment.id,
   `评论: ${comment.content.substring(0, 30)}...`,
   req.ip,
-  req.get('User-Agent')
+  req.get('User-Agent'),
+  {},
+  'operation'
+);
+
+// 记录安全相关操作
+await SimpleLogger.logOperation(
+  req.user.id,
+  req.user.username,
+  'access_denied',
+  'admin',
+  null,
+  '',
+  req.ip,
+  req.get('User-Agent'),
+  { reason: '权限不足' },
+  'security'
 );
 ```
 
@@ -102,6 +121,7 @@ GET /api/logs/list
 - `username`: 用户名（模糊查询）
 - `action`: 操作类型
 - `module`: 模块名称
+- `log_type`: 日志类型
 - `ip_address`: IP地址（模糊查询）
 - `status`: 操作状态
 - `start_date`: 开始日期
@@ -122,6 +142,7 @@ GET /api/logs/list
         "username": "admin",
         "action": "login",
         "module": "auth",
+        "log_type": "operation",
         "target_id": null,
         "target_name": null,
         "ip_address": "127.0.0.1",
@@ -161,6 +182,11 @@ GET /api/logs/stats
       { "action": "login", "count": 40 },
       { "action": "create", "count": 25 },
       { "action": "update", "count": 20 }
+    ],
+    "logTypeStats": [
+      { "log_type": "operation", "count": 80 },
+      { "log_type": "security", "count": 15 },
+      { "log_type": "system", "count": 5 }
     ]
   }
 }

@@ -8,7 +8,6 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const { setupLogs } = require('./setup-logs');
 
 console.log('🚀 启动前检查...\n');
 
@@ -68,39 +67,6 @@ function checkEnvFile() {
     console.log('   💡 建议设置为 600: chmod 600 .env');
   }
   
-  return true;
-}
-
-// 3. 检查必需的目录和初始化日志系统
-function checkDirectories() {
-  console.log('\n📁 检查必需的目录...');
-
-  const dirs = [
-    'public',
-    'public/uploads',
-    'logs'
-  ];
-
-  dirs.forEach(dir => {
-    const dirPath = path.join(__dirname, '../', dir);
-    if (!fs.existsSync(dirPath)) {
-      console.log(`   📁 创建目录: ${dir}`);
-      fs.mkdirSync(dirPath, { recursive: true });
-    } else {
-      console.log(`   ✅ 目录存在: ${dir}`);
-    }
-  });
-
-  // 初始化日志系统
-  console.log('\n📝 初始化日志系统...');
-  try {
-    setupLogs();
-    console.log('   ✅ 日志系统初始化完成');
-  } catch (error) {
-    console.log('   ❌ 日志系统初始化失败:', error.message);
-    return false;
-  }
-
   return true;
 }
 
@@ -179,7 +145,6 @@ function generateReport(checks) {
   const results = [
     { name: '环境变量', status: checks.env },
     { name: '.env文件', status: checks.envFile },
-    { name: '目录结构', status: checks.directories },
     { name: '端口可用性', status: checks.port },
     { name: '数据库连接', status: checks.database }
   ];
@@ -209,7 +174,6 @@ async function main() {
   const checks = {
     env: checkRequiredEnvs(),
     envFile: checkEnvFile(),
-    directories: checkDirectories(),
     port: await checkPort(),
     database: await quickDbTest()
   };

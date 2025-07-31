@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const { User, Role, RoleMenu, Menu } = require('../models/admin');
 const { mergePermissions } = require('../utils/tool');
 const { fail } = require('../utils/response');
+const SimpleLogger = require('../utils/logger');
 
 const authenticate = async (req, res, next) => {
   let token = '';
@@ -12,6 +13,19 @@ const authenticate = async (req, res, next) => {
     token = req.headers.authorization?.split(' ')[1] || '';
 
     if (!token) {
+      // 记录未提供令牌的安全日志
+      await SimpleLogger.logOperation(
+        null,
+        'anonymous',
+        'error',
+        'auth',
+        null,
+        `${req.method} ${req.originalUrl}`,
+        req.ip,
+        req.get('User-Agent') || '',
+        { error_type: 'no_token_provided' },
+        'security'
+      );
       return fail(res, '未提供认证令牌', 401);
     }
     
@@ -36,10 +50,36 @@ const authenticate = async (req, res, next) => {
     });
 
     if (!user) {
+      // 记录无效用户的安全日志
+      await SimpleLogger.logOperation(
+        null,
+        'unknown',
+        'error',
+        'auth',
+        null,
+        `${req.method} ${req.originalUrl}`,
+        req.ip,
+        req.get('User-Agent') || '',
+        { error_type: 'invalid_user', token_id: decoded.id },
+        'security'
+      );
       return fail(res, '无效用户', 401);
     }
 
     if (!user.is_active) {
+      // 记录被禁用用户尝试访问的安全日志
+      await SimpleLogger.logOperation(
+        user.id,
+        user.username,
+        'error',
+        'auth',
+        null,
+        `${req.method} ${req.originalUrl}`,
+        req.ip,
+        req.get('User-Agent') || '',
+        { error_type: 'disabled_user_access' },
+        'security'
+      );
       return fail(res, '用户账户已被禁用', 403);
     }
 
@@ -61,6 +101,32 @@ const authenticate = async (req, res, next) => {
     
     next();
   } catch (error) {
+    // 记录令牌验证失败的安全日志
+    let errorType = 'invalid_token';
+    let errorMessage = '无效令牌';
+
+    if (error.name === 'TokenExpiredError') {
+      errorType = 'token_expired';
+      errorMessage = '令牌已过期';
+    }
+
+    await SimpleLogger.logOperation(
+      null,
+      'anonymous',
+      'error',
+      'auth',
+      null,
+      `${req.method} ${req.originalUrl}`,
+      req.ip,
+      req.get('User-Agent') || '',
+      {
+        error_type: errorType,
+        error_message: error.message,
+        token: token ? 'provided' : 'missing'
+      },
+      'security'
+    );
+
     if (error.name === 'TokenExpiredError') {
       return fail(res, '令牌已过期', 401);
     }

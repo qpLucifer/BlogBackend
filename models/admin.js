@@ -244,6 +244,7 @@ const UserLog = sequelize.define(
     username: { type: DataTypes.STRING(50), allowNull: true }, // 冗余字段，方便查询
     action: { type: DataTypes.STRING(50), allowNull: false }, // 操作类型：login, logout, create, update, delete, view
     module: { type: DataTypes.STRING(50), allowNull: false }, // 模块名称：user, blog, comment, tag, role, menu
+    log_type: { type: DataTypes.STRING(30), allowNull: false, defaultValue: 'operation' }, // 日志类型：operation, security, system, error
     target_id: { type: DataTypes.INTEGER, allowNull: true }, // 操作目标ID
     target_name: { type: DataTypes.STRING(200), allowNull: true }, // 操作目标名称
     ip_address: { type: DataTypes.STRING(45), allowNull: true }, // IP地址，支持IPv6
@@ -267,6 +268,10 @@ const UserLog = sequelize.define(
       {
         fields: ['module'], // 模块索引
         name: 'user_log_module_idx'
+      },
+      {
+        fields: ['log_type'], // 日志类型索引
+        name: 'user_log_type_idx'
       },
       {
         fields: ['ip_address'], // IP地址索引

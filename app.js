@@ -115,7 +115,7 @@ const initDatabase = async () => {
   }
 };
 
-// 启动数据库初始化
-initDatabase();
+// 启动数据库初始化（异步执行，不阻塞应用启动）
+initDatabase().catch(console.error);
 
 module.exports = app;

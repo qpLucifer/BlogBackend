@@ -174,7 +174,8 @@ router.post('/add',
       blog.title,
       req.ip,
       req.get('User-Agent'),
-      { is_published, is_choice, tags: tags || [] }
+      { is_published, is_choice, tags: tags || [] },
+      'operation'
     );
 
     success(res, blog, '新增博客成功', 200);
@@ -214,7 +215,8 @@ router.put('/update/:id', checkMenuPermission('博客管理','can_update'), catc
       old_published: oldPublished,
       new_published: is_published,
       tags: tags || []
-    }
+    },
+    'operation'
   );
 
   success(res, blog, '更新博客成功');
@@ -240,7 +242,8 @@ router.delete('/delete/:id', checkMenuPermission('博客管理','can_delete'), c
     blogTitle,
     req.ip,
     req.get('User-Agent'),
-    { deleted_title: blogTitle }
+    { deleted_title: blogTitle },
+    'operation'
   );
 
   success(res, null, '博客删除成功');

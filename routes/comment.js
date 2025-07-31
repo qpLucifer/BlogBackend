@@ -121,7 +121,8 @@ router.post('/add', checkMenuPermission('评论管理','can_create'), catchAsync
     `评论ID:${comment.id}`,
     req.ip,
     req.get('User-Agent'),
-    { blog_id, user_id, parent_id }
+    { blog_id, user_id, parent_id },
+    'operation'
   );
 
   success(res, comment, '新增评论成功', 200);

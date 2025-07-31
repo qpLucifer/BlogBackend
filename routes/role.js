@@ -80,7 +80,8 @@ router.post('/roles', checkMenuPermission('角色管理','can_create'), catchAsy
     role.name,
     req.ip,
     req.get('User-Agent'),
-    { description, menus: menus || [] }
+    { description, menus: menus || [] },
+    'operation'
   );
 
   success(res, role, '创建角色成功');
@@ -128,7 +129,8 @@ router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catch
       old_description: oldDescription,
       new_description: description,
       menus: menus || []
-    }
+    },
+    'operation'
   );
 
   success(res, role, '更新角色成功');
@@ -155,7 +157,8 @@ router.delete('/roles/:id', checkMenuPermission('角色管理','can_delete'), ca
     roleName,
     req.ip,
     req.get('User-Agent'),
-    { deleted_name: roleName, deleted_description: roleDescription }
+    { deleted_name: roleName, deleted_description: roleDescription },
+    'operation'
   );
 
   success(res, null, '角色删除成功');

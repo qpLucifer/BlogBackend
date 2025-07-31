@@ -34,7 +34,8 @@ router.post('/', checkMenuPermission('菜单管理','can_create'), catchAsync(as
     menu.name,
     req.ip,
     req.get('User-Agent'),
-    { path: menu.path, icon: menu.icon, order: menu.order }
+    { path: menu.path, icon: menu.icon, order: menu.order },
+    'operation'
   );
 
   success(res, menu, '创建菜单成功', 200);
@@ -64,7 +65,8 @@ router.put('/:id', checkMenuPermission('菜单管理','can_update'), catchAsync(
       new_name: menu.name,
       old_path: oldPath,
       new_path: menu.path
-    }
+    },
+    'operation'
   );
 
   success(res, menu, '更新菜单成功');
@@ -89,7 +91,8 @@ router.delete('/:id', checkMenuPermission('菜单管理','can_delete'), catchAsy
     menuName,
     req.ip,
     req.get('User-Agent'),
-    { deleted_name: menuName, deleted_path: menuPath }
+    { deleted_name: menuName, deleted_path: menuPath },
+    'operation'
   );
 
   success(res, null, '删除菜单成功');

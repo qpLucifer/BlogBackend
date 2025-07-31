@@ -15,16 +15,17 @@ router.use(authenticate);
 router.get('/list',
   checkMenuPermission('日志管理', 'can_read'),
   catchAsync(async (req, res) => {
-    const { 
-      username, 
-      action, 
-      module, 
-      ip_address, 
+    const {
+      username,
+      action,
+      module,
+      log_type,
+      ip_address,
       status,
       start_date,
       end_date,
-      pageSize = 20, 
-      currentPage = 1 
+      pageSize = 20,
+      currentPage = 1
     } = req.query;
 
     // 构建查询条件
@@ -40,6 +41,10 @@ router.get('/list',
     
     if (module) {
       whereConditions.module = module;
+    }
+
+    if (log_type) {
+      whereConditions.log_type = log_type;
     }
     
     if (ip_address) {
@@ -71,8 +76,8 @@ router.get('/list',
     const logs = await UserLog.findAll({
       where: whereConditions,
       attributes: [
-        'id', 'user_id', 'username', 'action', 'module', 
-        'target_id', 'target_name', 'ip_address', 'user_agent', 
+        'id', 'user_id', 'username', 'action', 'module', 'log_type',
+        'target_id', 'target_name', 'ip_address', 'user_agent',
         'status', 'details', 'created_at'
       ],
       limit: parseInt(pageSize),
@@ -128,6 +133,16 @@ router.get('/stats',
         order: [[UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'DESC']]
       });
 
+      // 获取各日志类型数量
+      const logTypeStats = await UserLog.findAll({
+        attributes: [
+          'log_type',
+          [UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'count']
+        ],
+        group: ['log_type'],
+        order: [[UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'DESC']]
+      });
+
       // 获取最近7天的日志数量
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -144,14 +159,16 @@ router.get('/stats',
         todayCount,
         recentCount,
         moduleStats,
-        actionStats
+        actionStats,
+        logTypeStats
       }, '获取日志统计信息成功');
     } catch (error) {
       success(res, {
         todayCount: 0,
         recentCount: 0,
         moduleStats: [],
-        actionStats: []
+        actionStats: [],
+        logTypeStats: []
       }, '获取日志统计信息失败，返回默认值');
     }
   })
@@ -186,11 +203,12 @@ router.delete('/clean',
 router.get('/export',
   checkMenuPermission('日志管理', 'can_read'),
   catchAsync(async (req, res) => {
-    const { 
-      username, 
-      action, 
-      module, 
-      ip_address, 
+    const {
+      username,
+      action,
+      module,
+      log_type,
+      ip_address,
       status,
       start_date,
       end_date
@@ -210,7 +228,11 @@ router.get('/export',
     if (module) {
       whereConditions.module = module;
     }
-    
+
+    if (log_type) {
+      whereConditions.log_type = log_type;
+    }
+
     if (ip_address) {
       whereConditions.ip_address = { [Op.like]: `%${ip_address}%` };
     }
@@ -228,7 +250,7 @@ router.get('/export',
     const logs = await UserLog.findAll({
       where: whereConditions,
       attributes: [
-        'id', 'username', 'action', 'module', 
+        'id', 'username', 'action', 'module', 'log_type',
         'target_name', 'ip_address', 'status', 'created_at'
       ],
       order: [['created_at', 'DESC']],
@@ -236,13 +258,15 @@ router.get('/export',
     });
 
     // 转换为CSV格式
-    const csvHeader = 'ID,用户名,操作,模块,目标,IP地址,状态,时间\n';
+    const csvHeader = 'ID,用户名,操作,模块,日志类型,目标,IP地址,状态,时间\n';
+    console.log(logs);
     const csvData = logs.map(log => {
       return [
         log.id,
         log.username || '',
         log.action,
         log.module,
+        log.log_type,
         log.target_name || '',
         log.ip_address || '',
         log.status,

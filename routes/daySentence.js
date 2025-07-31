@@ -78,7 +78,8 @@ router.post('/add', checkMenuPermission('每日一句','can_create'), catchAsync
         `${auth}: ${day_sentence.substring(0, 30)}...`,
         req.ip,
         req.get('User-Agent'),
-        { day_sentence, auth }
+        { day_sentence, auth },
+        'operation'
     );
 
     success(res, { id: newSentence.id }, '添加每日一句成功', 200);
@@ -117,7 +118,8 @@ router.put('/update/:id', checkMenuPermission('每日一句','can_update'), catc
         `${auth}: ${day_sentence.substring(0, 30)}...`,
         req.ip,
         req.get('User-Agent'),
-        { day_sentence, auth }
+        { day_sentence, auth },
+        'operation'
     );
 
     success(res, null, '更新每日一句成功');
@@ -147,7 +149,9 @@ router.delete('/delete/:id', checkMenuPermission('每日一句','can_delete'), c
         id,
         targetName,
         req.ip,
-        req.get('User-Agent')
+        req.get('User-Agent'),
+        {},
+        'operation'
     );
 
     success(res, null, '删除每日一句成功');

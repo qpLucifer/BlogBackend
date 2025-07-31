@@ -72,7 +72,8 @@ router.post('/image',
         filename: req.file.filename,
         size: req.file.size,
         mimetype: req.file.mimetype
-      }
+      },
+      'operation'
     );
 
     const url = `/images/${req.file.filename}`;

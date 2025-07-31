@@ -10,6 +10,7 @@ class SimpleLogger {
         username,
         action: 'login',
         module: 'auth',
+        log_type: success ? 'operation' : 'security',
         ip_address: ip,
         user_agent: userAgent,
         status: success ? 'success' : 'failed',
@@ -27,6 +28,7 @@ class SimpleLogger {
         username,
         action: 'logout',
         module: 'auth',
+        log_type: 'operation',
         ip_address: ip,
         user_agent: userAgent,
         status: 'success'
@@ -37,13 +39,14 @@ class SimpleLogger {
   }
 
   // 记录模块操作（增删改查）
-  static async logOperation(userId, username, action, module, targetId = null, targetName = '', ip, userAgent = '', details = {}) {
+  static async logOperation(userId, username, action, module, targetId = null, targetName = '', ip, userAgent = '', details = {}, logType = 'operation') {
     try {
       await UserLog.create({
         user_id: userId,
         username,
         action, // create, update, delete, view
         module, // user, blog, comment, tag, role, menu, daySentence
+        log_type: logType, // operation, security, system, error
         target_id: targetId,
         target_name: targetName,
         ip_address: ip,
@@ -53,6 +56,33 @@ class SimpleLogger {
       });
     } catch (error) {
       console.error('记录操作日志失败:', error);
+    }
+  }
+
+  // 记录错误日志（便捷方法）
+  static async logError(userId, username, module, errorMessage, req, errorDetails = {}, logType = 'error') {
+    try {
+      await UserLog.create({
+        user_id: userId,
+        username,
+        action: 'error',
+        module,
+        log_type: logType,
+        target_id: null,
+        target_name: `${req.method} ${req.originalUrl}`,
+        ip_address: req.ip,
+        user_agent: req.get('User-Agent') || '',
+        status: 'failed',
+        details: JSON.stringify({
+          error_message: errorMessage,
+          request_body: req.body,
+          request_params: req.params,
+          request_query: req.query,
+          ...errorDetails
+        })
+      });
+    } catch (error) {
+      console.error('记录错误日志失败:', error);
     }
   }
 }
