@@ -153,6 +153,13 @@ router.get('/:id', checkMenuPermission('博客管理','can_read'), catchAsync(as
   success(res, blog, '获取博客成功');
 }));
 
+// 博客访问（增加访问量）
+router.post('/:id/view', catchAsync(async (req, res) => {
+  const statsService = require('../utils/statsService');
+  await statsService.updateBlogView(req.params.id);
+  success(res, null, '访问量已更新');
+}));
+
 // 新增博客
 router.post('/add',
   checkMenuPermission('博客管理','can_create'),

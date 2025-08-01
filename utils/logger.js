@@ -1,5 +1,6 @@
 // utils/logger.js - 简化的操作日志系统
 const { UserLog } = require('../models/admin');
+const wsManager = require('./websocket');
 
 // 简化的日志记录器
 class SimpleLogger {
@@ -41,7 +42,7 @@ class SimpleLogger {
   // 记录模块操作（增删改查）
   static async logOperation(userId, username, action, module, targetId = null, targetName = '', ip, userAgent = '', details = {}, logType = 'operation', status = 'success') {
     try {
-      await UserLog.create({
+      const logEntry = await UserLog.create({
         user_id: userId,
         username,
         action, // create, update, delete, view
@@ -54,6 +55,11 @@ class SimpleLogger {
         status: status,
         details: JSON.stringify(details)
       });
+
+      // 如果是错误日志，通过WebSocket推送
+      if (status === 'error' || logType === 'error') {
+        wsManager.pushErrorLog(logEntry);
+      }
     } catch (error) {
       console.error('记录操作日志失败:', error);
     }

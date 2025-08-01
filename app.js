@@ -118,4 +118,10 @@ const initDatabase = async () => {
 // 启动数据库初始化（异步执行，不阻塞应用启动）
 initDatabase().catch(console.error);
 
+// 启动统计服务
+const statsService = require('./utils/statsService');
+setTimeout(() => {
+  statsService.start();
+}, 5000); // 延迟5秒启动，确保数据库连接已建立
+
 module.exports = app;
