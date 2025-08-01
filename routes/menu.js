@@ -35,7 +35,8 @@ router.post('/', checkMenuPermission('菜单管理','can_create'), catchAsync(as
     req.ip,
     req.get('User-Agent'),
     { path: menu.path, icon: menu.icon, order: menu.order },
-    'operation'
+    'operation',
+    'success'
   );
 
   success(res, menu, '创建菜单成功', 200);

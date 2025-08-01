@@ -130,7 +130,8 @@ router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catch
       new_description: description,
       menus: menus || []
     },
-    'operation'
+    'operation',
+    'success'
   );
 
   success(res, role, '更新角色成功');

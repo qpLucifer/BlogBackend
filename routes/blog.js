@@ -175,7 +175,8 @@ router.post('/add',
       req.ip,
       req.get('User-Agent'),
       { is_published, is_choice, tags: tags || [] },
-      'operation'
+      'operation',
+      'success'
     );
 
     success(res, blog, '新增博客成功', 200);
@@ -216,7 +217,8 @@ router.put('/update/:id', checkMenuPermission('博客管理','can_update'), catc
       new_published: is_published,
       tags: tags || []
     },
-    'operation'
+    'operation',
+    'success'
   );
 
   success(res, blog, '更新博客成功');

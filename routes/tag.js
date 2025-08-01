@@ -64,7 +64,8 @@ router.post('/add', checkMenuPermission('标签管理','can_create'), catchAsync
       req.ip,
       req.get('User-Agent'),
       { tag_name: name },
-      'operation'
+      'operation',
+      'success'
     );
 
     success(res, tag, '新增标签成功', 200);
@@ -86,6 +87,7 @@ router.post('/add', checkMenuPermission('标签管理','can_create'), catchAsync
           tag_name: name
         },
         'error',
+        'failed'
       );
       return fail(res, '标签已存在', 400);
     }

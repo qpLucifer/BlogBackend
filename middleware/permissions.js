@@ -29,7 +29,8 @@ const checkPermission = (permissionName) => {
             required_permission: permissionName,
             user_permissions: req.user.permissions
           },
-          'security'
+          'security',
+          'failed'
         );
         return fail(res, '权限不足', 403, {
           required: permissionName,
@@ -108,7 +109,8 @@ const checkMenuPermission = (menuName,permissionName) => {
             required_permission: permissionName,
             menu_permissions: hasPermission
           },
-          'security'
+          'security',
+          'failed'
         );
         return fail(res, menuName+ '菜单'+permissionNameObj[permissionName]+'权限不足', 403, { required: permissionName });
       }

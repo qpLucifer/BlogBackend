@@ -55,7 +55,8 @@ const globalErrorHandler = async (err, req, res, next) => {
         request_params: req.params,
         request_query: req.query
       },
-      logType
+      logType,
+      'error'
     );
   } catch (logError) {
     // 如果日志记录失败，不要影响错误响应
@@ -96,7 +97,8 @@ const notFoundHandler = async (req, res, next) => {
         request_params: req.params,
         request_query: req.query
       },
-      'operation' // 404通常是正常的操作错误
+      'operation', // 404通常是正常的操作错误
+      'failed'
     );
   } catch (logError) {
     console.error('记录404日志失败:', logError);

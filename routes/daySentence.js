@@ -79,7 +79,8 @@ router.post('/add', checkMenuPermission('每日一句','can_create'), catchAsync
         req.ip,
         req.get('User-Agent'),
         { day_sentence, auth },
-        'operation'
+        'operation',
+        'success'
     );
 
     success(res, { id: newSentence.id }, '添加每日一句成功', 200);

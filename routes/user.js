@@ -88,7 +88,8 @@ router.post('/users',
       req.ip,
       req.get('User-Agent'),
       { email, roles },
-      'operation'
+      'operation',
+      'success'
     );
 
     success(res, user, '新增用户成功', 200);
@@ -122,7 +123,8 @@ router.put('/users/:id',
       req.ip,
       req.get('User-Agent'),
       { email, is_active, roles },
-      'operation'
+      'operation',
+      'success'
     );
 
     success(res, user, '更新用户成功');
@@ -161,7 +163,8 @@ router.delete('/users/:id',checkMenuPermission('用户管理','can_delete'), cat
     req.ip,
     req.get('User-Agent'),
     {},
-    'operation'
+    'operation',
+    'success'
   );
 
   success(res, null, '用户删除成功');

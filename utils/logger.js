@@ -39,7 +39,7 @@ class SimpleLogger {
   }
 
   // 记录模块操作（增删改查）
-  static async logOperation(userId, username, action, module, targetId = null, targetName = '', ip, userAgent = '', details = {}, logType = 'operation') {
+  static async logOperation(userId, username, action, module, targetId = null, targetName = '', ip, userAgent = '', details = {}, logType = 'operation', status = 'success') {
     try {
       await UserLog.create({
         user_id: userId,
@@ -51,7 +51,7 @@ class SimpleLogger {
         target_name: targetName,
         ip_address: ip,
         user_agent: userAgent,
-        status: 'success',
+        status: status,
         details: JSON.stringify(details)
       });
     } catch (error) {

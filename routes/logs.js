@@ -251,9 +251,9 @@ router.get('/export',
       where: whereConditions,
       attributes: [
         'id', 'username', 'action', 'module', 'log_type',
-        'target_name', 'ip_address', 'status', 'created_at'
+        'target_name', 'ip_address', 'status', 'createdAt'
       ],
-      order: [['created_at', 'DESC']],
+      order: [['createdAt', 'DESC']],
       limit: 10000 // 限制导出数量
     });
 
@@ -270,7 +270,7 @@ router.get('/export',
         log.target_name || '',
         log.ip_address || '',
         log.status,
-        log.created_at,
+        log.createdAt,
       ].join(',');
     }).join('\n');
 

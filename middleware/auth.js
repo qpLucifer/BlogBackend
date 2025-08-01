@@ -24,7 +24,8 @@ const authenticate = async (req, res, next) => {
         req.ip,
         req.get('User-Agent') || '',
         { error_type: 'no_token_provided' },
-        'security'
+        'security',
+        'failed'
       );
       return fail(res, '未提供认证令牌', 401);
     }
@@ -61,7 +62,8 @@ const authenticate = async (req, res, next) => {
         req.ip,
         req.get('User-Agent') || '',
         { error_type: 'invalid_user', token_id: decoded.id },
-        'security'
+        'security',
+        'failed'
       );
       return fail(res, '无效用户', 401);
     }
@@ -78,7 +80,8 @@ const authenticate = async (req, res, next) => {
         req.ip,
         req.get('User-Agent') || '',
         { error_type: 'disabled_user_access' },
-        'security'
+        'security',
+        'failed'
       );
       return fail(res, '用户账户已被禁用', 403);
     }
