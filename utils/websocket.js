@@ -1,8 +1,7 @@
 // utils/websocket.js - WebSocket服务管理
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/admin');
-
+const { User, UserLog } = require('../models/admin');
 class WebSocketManager {
   constructor() {
     this.io = null;
@@ -10,7 +9,8 @@ class WebSocketManager {
     this.stats = {
       onlineUsers: 0,
       totalBlogs: 0,
-      totalViews: 0
+      totalViews: 0,
+      errorLogs: 0,
     };
   }
 
@@ -50,7 +50,7 @@ class WebSocketManager {
     });
 
     // 连接处理
-    this.io.on('connection', (socket) => {
+    this.io.on('connection', async (socket) => {
       console.log(`用户 ${socket.username} (ID: ${socket.userId}) 已连接`);
       
       // 添加到已连接用户列表
@@ -62,6 +62,15 @@ class WebSocketManager {
 
       // 更新在线用户数
       this.updateOnlineUsers();
+      const errorLogDataNum = await UserLog.count({
+        where: {
+          log_type: 'error',
+          status: 'failed',
+          hasRead: false
+        }
+      });
+      // 更新错误日志数量
+      this.updateErrorLogs(errorLogDataNum);
 
       // 发送当前统计数据
       socket.emit('stats:update', this.stats);
@@ -77,6 +86,7 @@ class WebSocketManager {
       socket.on('ping', () => {
         socket.emit('pong');
       });
+      
     });
 
     console.log('✅ WebSocket服务已启动');
@@ -86,6 +96,12 @@ class WebSocketManager {
   updateOnlineUsers() {
     this.stats.onlineUsers = this.connectedUsers.size;
     this.broadcast('stats:onlineUsers', this.stats.onlineUsers);
+  }
+
+  // 更新错误日志数量
+  updateErrorLogs(errorLogDataNum) {
+    this.stats.errorLogs = errorLogDataNum;
+    this.broadcast('stats:errorLogs', this.stats.errorLogs);
   }
 
   // 广播消息给所有连接的用户
@@ -104,19 +120,13 @@ class WebSocketManager {
   }
 
   // 推送错误日志
-  pushErrorLog(logData) {
-    this.broadcast('log:error', {
-      id: logData.id,
-      username: logData.username,
-      action: logData.action,
-      module: logData.module,
-      target_name: logData.target_name,
-      ip_address: logData.ip_address,
-      status: logData.status,
-      details: logData.details,
-      created_at: logData.created_at,
-      timestamp: new Date().toISOString()
-    });
+  pushErrorLog(errorLogDataNum) {
+    this.broadcast('log:error', errorLogDataNum);
+  }
+
+  // 推送错误日志数量减少通知
+  pushErrorLogDecrease(errorLogDataNum) {
+    this.broadcast('log:errorDecrease', errorLogDataNum);
   }
 
   // 更新博客统计

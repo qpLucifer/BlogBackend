@@ -23,9 +23,12 @@ function showHelp() {
   console.log('  reset      - 重置数据库（删除所有数据）');
   console.log('  diagnose   - 全面的数据库诊断');
   console.log('  help       - 显示此帮助信息\n');
+  console.log('快捷命令:');
+  console.log('  npm run db:fix - 直接执行重复索引修复\n');
   console.log('示例:');
   console.log('  npm run db check');
-  console.log('  npm run db fix --exec');
+  console.log('  npm run db fix -- --exec');
+  console.log('  npm run db:fix');
   console.log('  npm run db reset');
 }
 
@@ -319,7 +322,7 @@ async function fullDiagnose() {
 async function main() {
   const command = process.argv[2];
   const flags = process.argv.slice(3);
-  
+
   if (!command || command === 'help') {
     showHelp();
     return;

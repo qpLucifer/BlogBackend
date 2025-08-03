@@ -251,6 +251,7 @@ const UserLog = sequelize.define(
     user_agent: { type: DataTypes.STRING(500), allowNull: true }, // 用户代理
     details: { type: DataTypes.TEXT, allowNull: true }, // 详细信息，JSON格式
     status: { type: DataTypes.STRING(20), defaultValue: 'success' }, // 操作状态：success, failed, error
+    hasRead: { type: DataTypes.BOOLEAN, defaultValue: false }, // 是否已读
   },
   {
     tableName: "user_logs",

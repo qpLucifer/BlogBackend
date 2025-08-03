@@ -58,7 +58,13 @@ class SimpleLogger {
 
       // 如果是错误日志，通过WebSocket推送
       if (status === 'error' || logType === 'error') {
-        wsManager.pushErrorLog(logEntry);
+        const errorLogDataNum = await UserLog.count({
+          where: {
+            log_type: 'error',
+            status: 'failed'
+          }
+        });
+        wsManager.pushErrorLog(errorLogDataNum);
       }
     } catch (error) {
       console.error('记录操作日志失败:', error);

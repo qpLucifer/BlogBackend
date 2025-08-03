@@ -7,6 +7,7 @@ const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
 const { UserLog } = require('../models/admin');
 const { Op } = require('sequelize');
+const wsManager = require('../utils/websocket');
 
 // 需要认证
 router.use(authenticate);
@@ -78,7 +79,7 @@ router.get('/list',
       attributes: [
         'id', 'user_id', 'username', 'action', 'module', 'log_type',
         'target_id', 'target_name', 'ip_address', 'user_agent',
-        'status', 'details', 'created_at'
+        'status', 'details', 'hasRead', 'created_at'
       ],
       limit: parseInt(pageSize),
       offset: (parseInt(currentPage) - 1) * parseInt(pageSize),
@@ -259,7 +260,6 @@ router.get('/export',
 
     // 转换为CSV格式
     const csvHeader = 'ID,用户名,操作,模块,日志类型,目标,IP地址,状态,时间\n';
-    console.log(logs);
     const csvData = logs.map(log => {
       return [
         log.id,
@@ -281,5 +281,40 @@ router.get('/export',
     res.send('\uFEFF' + csv); // 添加BOM以支持中文
   })
 );
+
+// 标记日志为已读
+router.post('/mark-read',
+  checkMenuPermission('日志管理', 'can_read'),
+  catchAsync(async (req, res) => {
+    const { logId } = req.body;
+
+    try {
+      const log = await UserLog.findByPk(logId);
+      if (!log) {
+        throw new Error('日志不存在');
+      }
+
+      log.hasRead = true;
+      await log.save();
+
+      // 如果是错误日志，发送WebSocket通知
+      if (log.log_type === 'error' && log.status === 'failed') {
+        const errorLogDataNum = await UserLog.count({
+          where: {
+            log_type: 'error',
+            status: 'failed',
+            hasRead: false
+          }
+        });
+        wsManager.pushErrorLogDecrease(errorLogDataNum);
+      }
+
+      success(res, {}, '日志已标记为已读');
+    } catch (error) {
+      throw error;
+    }
+  })
+);
+
 
 module.exports = router;

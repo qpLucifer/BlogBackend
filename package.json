@@ -9,6 +9,7 @@
     "start:skip-check": "node ./bin/www",
     "pre-start": "node ./scripts/pre-start.js",
     "db": "node ./scripts/db-manager.js",
+    "db:fix": "node ./scripts/db-manager.js fix --exec",
     "setup-logs": "node ./scripts/setup-logs.js",
     "logs:clean": "node ./scripts/setup-logs.js && find ./logs -name '*.log' -mtime +30 -delete"
   },
