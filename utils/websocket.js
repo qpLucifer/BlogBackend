@@ -11,6 +11,7 @@ class WebSocketManager {
       totalBlogs: 0,
       totalViews: 0,
       errorLogs: 0,
+      pendingComments: 0,
     };
   }
 
@@ -50,31 +51,7 @@ class WebSocketManager {
     });
 
     // 连接处理
-    this.io.on('connection', async (socket) => {
-      console.log(`用户 ${socket.username} (ID: ${socket.userId}) 已连接`);
-      
-      // 添加到已连接用户列表
-      this.connectedUsers.set(socket.userId, {
-        socketId: socket.id,
-        username: socket.username,
-        connectedAt: new Date()
-      });
-
-      // 更新在线用户数
-      this.updateOnlineUsers();
-      const errorLogDataNum = await UserLog.count({
-        where: {
-          log_type: 'error',
-          status: 'failed',
-          hasRead: false
-        }
-      });
-      // 更新错误日志数量
-      this.updateErrorLogs(errorLogDataNum);
-
-      // 发送当前统计数据
-      socket.emit('stats:update', this.stats);
-
+    this.io.on('connection', (socket) => {
       // 断开连接处理
       socket.on('disconnect', () => {
         console.log(`用户 ${socket.username} (ID: ${socket.userId}) 已断开连接`);
@@ -86,7 +63,32 @@ class WebSocketManager {
       socket.on('ping', () => {
         socket.emit('pong');
       });
-      
+      // 初始化数据
+      socket.on('initStats', async () => {
+        console.log(`用户 ${socket.username} (ID: ${socket.userId}) 已连接`);
+
+        // 添加到已连接用户列表
+        this.connectedUsers.set(socket.userId, {
+          socketId: socket.id,
+          username: socket.username,
+          connectedAt: new Date()
+        });
+
+        // 更新在线用户数
+        this.updateOnlineUsers();
+        const errorLogDataNum = await UserLog.count({
+          where: {
+            log_type: 'error',
+            status: 'failed',
+            hasRead: false
+          }
+        });
+        // 更新错误日志数量
+        this.updateErrorLogs(errorLogDataNum);
+
+        // 发送当前统计数据
+        socket.emit('stats:update', this.stats);
+      });
     });
 
     console.log('✅ WebSocket服务已启动');
