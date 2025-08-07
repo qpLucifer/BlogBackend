@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { registerUser, loginUser } = require('../utils/auth');
-const { success } = require('../utils/response');
+const { success, fail } = require('../utils/response');
 
 // 导入验证和安全中间件
 const { userValidation } = require('../utils/validation');
@@ -44,6 +44,13 @@ router.post('/login',
     } catch (error) {
       // 记录失败登录
       await SimpleLogger.logLogin(username, req.ip, false, error.message, req.get('User-Agent'));
+      // 根据错误类型返回不同的状态码和消息
+      if (error.message === '用户名或密码错误') {
+        return fail(res, '用户名或密码错误', 400);
+      }
+      if (error.message === '用户账户已被禁用') {
+        return fail(res, '用户账户已被禁用', 400);
+      }
 
       // 重新抛出错误让catchAsync处理
       throw error;
