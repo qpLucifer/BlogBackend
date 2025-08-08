@@ -1,51 +1,40 @@
-// middleware/security.js - 安全中间件
+// middleware/security.js - 安全中间件（支持运行时更新）
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
+const { getSettings } = require('../utils/settings');
 
-// 创建速率限制器
+// 创建速率限制器（根据当前设置）
 const createRateLimiter = (windowMs, max, message) => {
   return rateLimit({
     windowMs,
     max,
-    standardHeaders: true, // 返回标准的 RateLimit 头
-    legacyHeaders: false, // 禁用 X-RateLimit-* 头
-    // 跳过预检请求，避免 CORS 预检被限流
-    skip: (req, res) => req.method === 'OPTIONS',
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.method === 'OPTIONS',
     handler: (req, res) => {
-      // 设置状态码为429并返回标准格式的错误信息
-      res.status(429).json({
-        code: 429,
-        message: `${message} (状态码: 429)`,
-        data: null
-      });
+      res.status(429).json({ code: 429, message: `${message} (状态码: 429)`, data: null });
     },
-    // 确保即使客户端中断连接也能发送完整响应
     skipFailedRequests: false,
-    // 确保响应头正确设置
-    headers: true
+    headers: true,
   });
 };
 
-// 登录限制 - 15分钟内最多5次
-const loginLimiter = createRateLimiter(
-  15 * 60 * 1000, // 15分钟
-  5, // 最多5次尝试
-  '登录尝试次数过多，请15分钟后再试'
-);
+let _limiters = buildLimiters();
 
-// API通用限制 - 15分钟内最多100次
-const apiLimiter = createRateLimiter(
-  15 * 60 * 1000, // 15分钟
-  100, // 最多100次请求
-  '请求频率过高，请稍后再试'
-);
+function buildLimiters() {
+  const s = getSettings().rateLimit;
+  return {
+    loginLimiter: createRateLimiter(s.loginWindowMs, s.loginMax, '登录尝试次数过多，请15分钟后再试'),
+    apiLimiter: createRateLimiter(s.windowMs, s.max, '请求频率过高，请稍后再试'),
+    uploadLimiter: createRateLimiter(s.uploadWindowMs, s.uploadMax, '上传频率过高，请稍后再试'),
+  };
+}
 
-// 上传限制 - 1分钟内最多10次
-const uploadLimiter = createRateLimiter(
-  60 * 1000, // 1分钟
-  10, // 最多10次上传
-  '上传频率过高，请稍后再试'
-);
+function refreshLimiters() {
+  _limiters = buildLimiters();
+}
+
+const { loginLimiter, apiLimiter, uploadLimiter } = _limiters;
 
 // 配置Helmet安全头
 const helmetConfig = {
@@ -86,9 +75,10 @@ const helmetConfig = {
 };
 
 module.exports = {
-  loginLimiter,
-  apiLimiter,
-  uploadLimiter,
+  get loginLimiter() { return _limiters.loginLimiter; },
+  get apiLimiter() { return _limiters.apiLimiter; },
+  get uploadLimiter() { return _limiters.uploadLimiter; },
+  refreshLimiters,
   helmetConfig,
-  helmet
+  helmet,
 };

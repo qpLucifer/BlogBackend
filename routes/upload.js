@@ -54,6 +54,13 @@ const upload = multer({
 router.post('/image',
   uploadLimiter, // 应用上传速率限制
   checkMenuPermission('博客管理','can_create'),
+  (req, res, next) => {
+    const { getSettings } = require('../utils/settings');
+    if (!getSettings().validation.uploadEnabled) {
+      return fail(res, '上传功能已被管理员禁用', 403);
+    }
+    next();
+  },
   upload.single('file'),
   catchAsync(async (req, res) => {
     if (!req.file) {
