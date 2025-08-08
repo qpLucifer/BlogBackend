@@ -217,15 +217,15 @@ router.get('/export',
 
     // 构建查询条件
     const whereConditions = {};
-    
+
     if (username) {
       whereConditions.username = { [Op.like]: `%${username}%` };
     }
-    
+
     if (action) {
       whereConditions.action = action;
     }
-    
+
     if (module) {
       whereConditions.module = module;
     }
@@ -237,11 +237,11 @@ router.get('/export',
     if (ip_address) {
       whereConditions.ip_address = { [Op.like]: `%${ip_address}%` };
     }
-    
+
     if (status) {
       whereConditions.status = status;
     }
-    
+
     if (start_date && end_date) {
       whereConditions.created_at = {
         [Op.between]: [new Date(start_date), new Date(end_date)]
@@ -301,7 +301,7 @@ router.post('/mark-read',
       if (log.log_type === 'error' && log.status === 'failed') {
         const errorLogDataNum = await UserLog.count({
           where: {
-            log_type: 'error',
+            // log_type: 'error',
             status: 'failed',
             hasRead: false
           }
@@ -313,6 +313,47 @@ router.post('/mark-read',
     } catch (error) {
       throw error;
     }
+  })
+);
+
+// 失败日志统计
+router.get('/failed-stats',
+  checkMenuPermission('日志管理', 'can_read'),
+  catchAsync(async (req, res) => {
+    // 总失败数
+    const totalFailed = await UserLog.count({ where: { status: 'failed' } });
+    // 未读失败数
+    const unreadFailed = await UserLog.count({ where: { status: 'failed', hasRead: false } });
+    // 按模块统计失败数
+    const moduleStats = await UserLog.findAll({
+      attributes: [
+        'module',
+        [UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'count']
+      ],
+      where: { status: 'failed' },
+      group: ['module'],
+      order: [[UserLog.sequelize.fn('COUNT', UserLog.sequelize.col('id')), 'DESC']]
+    });
+
+    success(res, { totalFailed, unreadFailed, moduleStats }, '获取失败日志统计成功');
+  })
+);
+
+// 一键标记失败日志为已读
+router.post('/mark-read-failed',
+  checkMenuPermission('日志管理', 'can_read'),
+  catchAsync(async (req, res) => {
+    // 标记所有失败且未读的日志为已读
+    const [affectedRows] = await UserLog.update(
+      { hasRead: true },
+      { where: { status: 'failed', hasRead: false } }
+    );
+
+    // 重新计算未读失败数并通过WS广播
+    const unreadFailed = await UserLog.count({ where: { status: 'failed', hasRead: false } });
+    wsManager.updateErrorLogs(unreadFailed);
+
+    success(res, { affectedRows, unreadFailed }, '已将所有失败日志标记为已读');
   })
 );
 
