@@ -9,6 +9,7 @@ const { success, fail } = require('../utils/response');
 // 导入安全中间件
 const { catchAsync } = require('../middleware/errorHandler');
 const SimpleLogger = require('../utils/logger');
+const { uploadLimiter } = require('../middleware/security');
 
 const router = express.Router();
 
@@ -51,6 +52,7 @@ const upload = multer({
 
 // 上传图片接口
 router.post('/image',
+  uploadLimiter, // 应用上传速率限制
   checkMenuPermission('博客管理','can_create'),
   upload.single('file'),
   catchAsync(async (req, res) => {
@@ -82,4 +84,4 @@ router.post('/image',
   })
 );
 
-module.exports = router; 
+module.exports = router;

@@ -16,7 +16,7 @@ const authenticate = async (req, res, next) => {
       // 记录未提供令牌的安全日志
       await SimpleLogger.logOperation(
         null,
-        'anonymous',
+        req.user?.username || 'anonymous',
         'error',
         'auth',
         null,
@@ -115,7 +115,7 @@ const authenticate = async (req, res, next) => {
 
     await SimpleLogger.logOperation(
       null,
-      'anonymous',
+      req.user?.username || 'anonymous',
       'error',
       'auth',
       null,
@@ -127,7 +127,8 @@ const authenticate = async (req, res, next) => {
         error_message: error.message,
         token: token ? 'provided' : 'missing'
       },
-      'security'
+      'security',
+      'failed',
     );
 
     if (error.name === 'TokenExpiredError') {

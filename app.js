@@ -5,6 +5,9 @@ let logger = require('morgan');
 // 加载环境变量
 require('dotenv').config();
 
+// 导入安全中间件
+const { helmet, helmetConfig, apiLimiter } = require('./middleware/security');
+
 let auth = require('./routes/auth');
 let userRouter  = require('./routes/user');
 let roleRouter = require('./routes/role');
@@ -35,17 +38,21 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(cors({
+// 安全中间件
+app.use(helmet(helmetConfig));
+
+// CORS 必须在限流之前注册，确保预检和错误响应带上CORS头
+const corsOptions = {
   origin: function (origin, callback) {
     // 允许没有 origin 的请求（比如同源请求）
     if (!origin) return callback(null, true);
-    
+
     const allowedOrigins = [
-      'http://localhost:3001',  // React 开发服务器
-      'http://localhost:3000',  // 如果前端也在 3000 端口
-      process.env.CORS_ORIGIN   // 环境变量中的域名
+      'http://localhost:3001', // React 开发服务器
+      'http://localhost:3000', // 如果前端也在 3000 端口
+      process.env.CORS_ORIGIN, // 环境变量中的域名
     ].filter(Boolean);
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -55,10 +62,18 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization','X-Requested-With','Content-Type']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// 全局API速率限制（在 CORS 之后）
+app.use('/api', apiLimiter);
 
 
+// 使用auth路由（登录限制已在路由内部配置）
 app.use('/api/', auth);
 app.use('/api/user', userRouter);
 app.use('/api/role', roleRouter);
@@ -67,6 +82,7 @@ app.use('/api/daySentence', daySentenceRouter);
 app.use('/api/blog', blogRouter);
 app.use('/api/comments', commentRouter);
 app.use('/api/tag', tagRouter);
+// 上传路由
 app.use('/api/upload', uploadRouter);
 app.use('/api/logs', logsRouter);
 

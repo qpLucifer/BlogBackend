@@ -80,7 +80,7 @@ class WebSocketManager {
         this.updateOnlineUsers();
         const errorLogDataNum = await UserLog.count({
           where: {
-            log_type: 'error',
+            // log_type: 'error',
             status: 'failed',
             hasRead: false
           }

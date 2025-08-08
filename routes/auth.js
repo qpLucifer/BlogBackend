@@ -8,9 +8,11 @@ const { success, fail } = require('../utils/response');
 const { userValidation } = require('../utils/validation');
 const SimpleLogger = require('../utils/logger');
 const { catchAsync } = require('../middleware/errorHandler');
+const { loginLimiter } = require('../middleware/security');
 
 // 用户注册
 router.post('/register',
+  loginLimiter, // 应用登录速率限制防止恶意注册
   catchAsync(async (req, res) => {
     const { username, password, email, is_active, roles } = req.body;
 
@@ -31,6 +33,7 @@ router.post('/register',
 
 // 用户登录
 router.post('/login',
+  loginLimiter, // 应用登录速率限制
   catchAsync(async (req, res) => {
     const { username, password } = req.body;
 
