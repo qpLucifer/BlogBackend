@@ -16,7 +16,9 @@ const DEFAULTS = {
     passwordMin: 6,
     passwordMax: 20,
     enforceStrongPassword: true, // 是否启用强密码（大小写+数字）
-    uploadEnabled: true, // 上传模块验证/开关
+    uploadEnabled: true, // 上传模块开关
+    commentsEnabled: true, // 评论增删改开关
+    registrationEnabled: true, // 用户注册开关
   },
   security: {
     corsOrigins: (process.env.CORS_ORIGIN ? [process.env.CORS_ORIGIN] : ['http://localhost:3001','http://localhost:3000']),
@@ -68,12 +70,10 @@ function sanitizeValidation(input) {
       if (!Number.isNaN(v) && v >= 0) out[k] = v;
     }
   });
-  if (typeof input.enforceStrongPassword !== 'undefined') {
-    out.enforceStrongPassword = !!input.enforceStrongPassword;
-  }
-  if (typeof input.uploadEnabled !== 'undefined') {
-    out.uploadEnabled = !!input.uploadEnabled;
-  }
+  if (typeof input.enforceStrongPassword !== 'undefined') out.enforceStrongPassword = !!input.enforceStrongPassword;
+  if (typeof input.uploadEnabled !== 'undefined') out.uploadEnabled = !!input.uploadEnabled;
+  if (typeof input.commentsEnabled !== 'undefined') out.commentsEnabled = !!input.commentsEnabled;
+  if (typeof input.registrationEnabled !== 'undefined') out.registrationEnabled = !!input.registrationEnabled;
   return out;
 }
 
@@ -85,15 +85,38 @@ function sanitizeSecurity(input) {
   if (typeof input.helmetEnabled !== 'undefined') {
     out.helmetEnabled = !!input.helmetEnabled;
   }
-  if (typeof input.logLevel === 'string') {
-    out.logLevel = input.logLevel;
-  }
+  if (typeof input.logLevel === 'string') out.logLevel = input.logLevel;
   return out;
+}
+
+async function loadFromDb() {
+  try {
+    const { SystemSetting } = require('../models');
+    const row = await SystemSetting.findByPk(1);
+    if (row && row.settings) {
+      const dbSettings = JSON.parse(row.settings);
+      settings = { ...settings, ...dbSettings };
+    }
+    return settings;
+  } catch (e) {
+    console.error('加载系统设置失败:', e.message);
+    return settings;
+  }
+}
+
+async function saveToDb() {
+  const { SystemSetting } = require('../models');
+  if (!SystemSetting) {
+    throw new Error('SystemSetting 模型未初始化，请检查 models/index.js 的导出和加载顺序');
+  }
+  await SystemSetting.upsert({ id: 1, settings: JSON.stringify(settings) });
 }
 
 module.exports = {
   getSettings,
   updateSettings,
   DEFAULTS,
+  loadFromDb,
+  saveToDb,
 };
 

@@ -40,10 +40,14 @@ app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 安全中间件（支持在 SystemSettings 中开关 Helmet）
-if (getSettings().security.helmetEnabled) {
-  app.use(helmet(helmetConfig));
-}
+// 动态 Helmet：每次请求根据当前设置决定是否应用
+const dynamicHelmet = (req, res, next) => {
+  if (getSettings().security.helmetEnabled) {
+    return helmet(helmetConfig)(req, res, next);
+  }
+  return next();
+};
+app.use(dynamicHelmet);
 
 // CORS 必须在限流之前注册，确保预检和错误响应带上CORS头
 const corsOptions = {
@@ -111,6 +115,12 @@ const initDatabase = async () => {
 
     // 初始化角色和权限
     require('./utils/initRoles')();
+
+    // 加载系统设置（持久化）
+    const { loadFromDb } = require('./utils/settings');
+    const { refreshLimiters } = require('./middleware/security');
+    await loadFromDb();
+    refreshLimiters();
     console.log('✅ 初始数据加载完成');
 
   } catch (error) {

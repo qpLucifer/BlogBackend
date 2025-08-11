@@ -108,6 +108,11 @@ process.on('SIGTERM', async () => {
   }
 });
 
+// 初始化并导出 SystemSetting 模型
+const createSystemSetting = require('./system');
+const SystemSetting = createSystemSetting(sequelize);
+
 module.exports = {
-  sequelize
+  sequelize,
+  SystemSetting,
 };

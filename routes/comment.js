@@ -105,87 +105,117 @@ router.get('/listPage', checkMenuPermission('评论管理','can_read'), catchAsy
     }, '获取评论列表成功');
 }));
 
-// 新增评论
-router.post('/add', checkMenuPermission('评论管理','can_create'), catchAsync(async (req, res) => {
-  const { blog_id, user_id, content, parent_id } = req.body;
+// 新增评论（受系统设置开关控制）
+router.post('/add',
+  (req, res, next) => {
+    const { getSettings } = require('../utils/settings');
+    if (!getSettings().validation.commentsEnabled) {
+      return fail(res, '评论功能已关闭', 403);
+    }
+    next();
+  },
+  checkMenuPermission('评论管理','can_create'),
+  catchAsync(async (req, res) => {
+    const { blog_id, user_id, content, parent_id } = req.body;
 
-  const comment = await Comment.create({ blog_id, user_id, content, parent_id });
+    const comment = await Comment.create({ blog_id, user_id, content, parent_id });
 
-  // 记录操作日志
-  await SimpleLogger.logOperation(
-    req.user.id,
-    req.user.username,
-    'create',
-    'comment',
-    comment.id,
-    `评论ID:${comment.id}`,
-    req.ip,
-    req.get('User-Agent'),
-    { blog_id, user_id, parent_id },
-    'operation',
-    'success'
-  );
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'create',
+      'comment',
+      comment.id,
+      `评论ID:${comment.id}`,
+      req.ip,
+      req.get('User-Agent'),
+      { blog_id, user_id, parent_id },
+      'operation',
+      'success'
+    );
 
-  success(res, comment, '新增评论成功', 200);
-}));
+    success(res, comment, '新增评论成功', 200);
+  })
+);
 
-// 更新评论
-router.put('/update/:id', checkMenuPermission('评论管理','can_update'), catchAsync(async (req, res) => {
-  const { content } = req.body;
-  const comment = await Comment.findByPk(req.params.id);
-  if (!comment) {
-    return fail(res, '评论不存在', 404);
-  }
+// 更新评论（受系统设置开关控制）
+router.put('/update/:id',
+  (req, res, next) => {
+    const { getSettings } = require('../utils/settings');
+    if (!getSettings().validation.commentsEnabled) {
+      return fail(res, '评论功能已关闭', 403);
+    }
+    next();
+  },
+  checkMenuPermission('评论管理','can_update'),
+  catchAsync(async (req, res) => {
+    const { content } = req.body;
+    const comment = await Comment.findByPk(req.params.id);
+    if (!comment) {
+      return fail(res, '评论不存在', 404);
+    }
 
-  const oldContent = comment.content;
-  await comment.update({ content });
+    const oldContent = comment.content;
+    await comment.update({ content });
 
-  // 记录操作日志
-  await SimpleLogger.logOperation(
-    req.user.id,
-    req.user.username,
-    'update',
-    'comment',
-    comment.id,
-    `评论ID:${comment.id}`,
-    req.ip,
-    req.get('User-Agent'),
-    { old_content: oldContent, new_content: content }
-  );
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'update',
+      'comment',
+      comment.id,
+      `评论ID:${comment.id}`,
+      req.ip,
+      req.get('User-Agent'),
+      { old_content: oldContent, new_content: content }
+    );
 
-  success(res, comment, '更新评论成功');
-}));
+    success(res, comment, '更新评论成功');
+  })
+);
 
-// 删除评论
-router.delete('/delete/:id', checkMenuPermission('评论管理','can_delete'), catchAsync(async (req, res) => {
-  const comment = await Comment.findByPk(req.params.id);
-  if (!comment) {
-    return fail(res, '评论不存在', 404);
-  }
+// 删除评论（受系统设置开关控制）
+router.delete('/delete/:id',
+  (req, res, next) => {
+    const { getSettings } = require('../utils/settings');
+    if (!getSettings().validation.commentsEnabled) {
+      return fail(res, '评论功能已关闭', 403);
+    }
+    next();
+  },
+  checkMenuPermission('评论管理','can_delete'),
+  catchAsync(async (req, res) => {
+    const comment = await Comment.findByPk(req.params.id);
+    if (!comment) {
+      return fail(res, '评论不存在', 404);
+    }
 
-  const commentInfo = {
-    id: comment.id,
-    blog_id: comment.blog_id,
-    content: comment.content
-  };
+    const commentInfo = {
+      id: comment.id,
+      blog_id: comment.blog_id,
+      content: comment.content
+    };
 
-  await comment.destroy();
+    await comment.destroy();
 
-  // 记录操作日志
-  await SimpleLogger.logOperation(
-    req.user.id,
-    req.user.username,
-    'delete',
-    'comment',
-    req.params.id,
-    `评论ID:${req.params.id}`,
-    req.ip,
-    req.get('User-Agent'),
-    commentInfo
-  );
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'delete',
+      'comment',
+      req.params.id,
+      `评论ID:${req.params.id}`,
+      req.ip,
+      req.get('User-Agent'),
+      commentInfo
+    );
 
-  success(res, null, '评论删除成功');
-}));
+    success(res, null, '评论删除成功');
+  })
+);
 
 // 导出评论
 router.get('/export', checkMenuPermission('评论管理','can_read'), catchAsync(async (req, res) => {

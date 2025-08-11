@@ -13,6 +13,13 @@ const { loginLimiter } = require('../middleware/security');
 // 用户注册
 router.post('/register',
   loginLimiter, // 应用登录速率限制防止恶意注册
+  (req, res, next) => {
+    const { getSettings } = require('../utils/settings');
+    if (!getSettings().validation.registrationEnabled) {
+      return fail(res, '注册功能已关闭', 403);
+    }
+    next();
+  },
   catchAsync(async (req, res) => {
     const { username, password, email, is_active, roles } = req.body;
 
