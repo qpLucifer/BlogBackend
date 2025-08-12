@@ -115,6 +115,10 @@ router.post('/add',
     next();
   },
   checkMenuPermission('评论管理','can_create'),
+  (req, res, next) => {
+    const { validateBody, commentValidation } = require('../utils/validation');
+    return validateBody(commentValidation.create)(req, res, next);
+  },
   catchAsync(async (req, res) => {
     const { blog_id, user_id, content, parent_id } = req.body;
 
@@ -149,6 +153,10 @@ router.put('/update/:id',
     next();
   },
   checkMenuPermission('评论管理','can_update'),
+  (req, res, next) => {
+    const { validateBody, commentValidation } = require('../utils/validation');
+    return validateBody(commentValidation.update)(req, res, next);
+  },
   catchAsync(async (req, res) => {
     const { content } = req.body;
     const comment = await Comment.findByPk(req.params.id);

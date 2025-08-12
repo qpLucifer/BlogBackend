@@ -20,6 +20,12 @@ router.post('/register',
     }
     next();
   },
+  (req, res, next) => {
+    // 使用动态 validation 规则
+    const { register } = require('../utils/validation').userValidation();
+    const { validateBody } = require('../utils/validation');
+    return validateBody(register)(req, res, next);
+  },
   catchAsync(async (req, res) => {
     const { username, password, email, is_active, roles } = req.body;
 
@@ -41,6 +47,11 @@ router.post('/register',
 // 用户登录
 router.post('/login',
   loginLimiter, // 应用登录速率限制
+  (req, res, next) => {
+    const { login } = require('../utils/validation').userValidation();
+    const { validateBody } = require('../utils/validation');
+    return validateBody(login)(req, res, next);
+  },
   catchAsync(async (req, res) => {
     const { username, password } = req.body;
 

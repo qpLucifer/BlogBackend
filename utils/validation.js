@@ -1,102 +1,83 @@
-// utils/validation.js - 输入验证模式
+// utils/validation.js - 输入验证模式（支持从系统设置动态读取规则）
 const Joi = require('joi');
+const { getSettings } = require('./settings');
+const { fail } = require('./response');
 
-// 用户相关验证
-const userValidation = {
-  register: Joi.object({
-    username: Joi.string()
-      .alphanum()
-      .min(3)
-      .max(16)
-      .required()
-      .messages({
+// 动态用户验证（与系统设置同步）
+const userValidation = () => {
+  const v = getSettings().validation || {};
+  const usernameMin = Math.max(1, parseInt(v.usernameMin || 3, 10));
+  const usernameMax = Math.max(usernameMin, parseInt(v.usernameMax || 16, 10));
+  const passwordMin = Math.max(1, parseInt(v.passwordMin || 6, 10));
+  const passwordMax = Math.max(passwordMin, parseInt(v.passwordMax || 20, 10));
+  const strong = !!v.enforceStrongPassword;
+
+  const basePassword = Joi.string().min(passwordMin).max(passwordMax).required().messages({
+    'string.min': `密码长度不能少于${passwordMin}个字符`,
+    'string.max': `密码长度不能超过${passwordMax}个字符`,
+    'any.required': '密码是必填项'
+  });
+  const passwordSchema = strong
+    ? basePassword.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, '强密码（包含大小写字母和数字）').messages({
+        'string.pattern.base': '密码必须包含大小写字母和数字'
+      })
+    : basePassword;
+
+  return {
+    register: Joi.object({
+      username: Joi.string().alphanum().min(usernameMin).max(usernameMax).required().messages({
         'string.alphanum': '用户名只能包含字母和数字',
-        'string.min': '用户名长度不能少于3个字符',
-        'string.max': '用户名长度不能超过16个字符',
+        'string.min': `用户名长度不能少于${usernameMin}个字符`,
+        'string.max': `用户名长度不能超过${usernameMax}个字符`,
         'any.required': '用户名是必填项'
       }),
-    
-    password: Joi.string()
-      .min(6)
-      .max(20)
-      .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-      .required()
-      .messages({
-        'string.min': '密码长度不能少于6个字符',
-        'string.max': '密码长度不能超过20个字符',
-        'string.pattern.base': '密码必须包含大小写字母和数字',
-        'any.required': '密码是必填项'
-      }),
-    
-    email: Joi.string()
-      .email()
-      .required()
-      .messages({
+      password: passwordSchema,
+      email: Joi.string().email().required().messages({
         'string.email': '邮箱格式不正确',
         'any.required': '邮箱是必填项'
       }),
-    
-    is_active: Joi.boolean().default(true),
-    roles: Joi.array().items(Joi.number().integer().positive()).min(1).required()
-  }),
-
-  login: Joi.object({
-    username: Joi.string().required().messages({
-      'any.required': '用户名是必填项'
+      is_active: Joi.boolean().default(true),
+      roles: Joi.array().items(Joi.number().integer().positive()).min(1).required()
     }),
-    password: Joi.string().required().messages({
-      'any.required': '密码是必填项'
-    })
-  }),
 
-  update: Joi.object({
-    username: Joi.string().alphanum().min(3).max(16),
-    email: Joi.string().email(),
-    is_active: Joi.boolean(),
-    roles: Joi.array().items(Joi.number().integer().positive())
-  })
+    login: Joi.object({
+      username: Joi.string().required().messages({ 'any.required': '用户名是必填项' }),
+      password: Joi.string().required().messages({ 'any.required': '密码是必填项' })
+    }),
+
+    update: Joi.object({
+      username: Joi.string().alphanum().min(usernameMin).max(usernameMax),
+      email: Joi.string().email(),
+      is_active: Joi.boolean(),
+      roles: Joi.array().items(Joi.number().integer().positive())
+    })
+  };
 };
 
-// 博客相关验证
+
+// 博客相关验证（示例保持静态阈值，可按需改为动态）
 const blogValidation = {
   create: Joi.object({
-    title: Joi.string()
-      .min(1)
-      .max(200)
-      .required()
-      .messages({
-        'string.min': '标题不能为空',
-        'string.max': '标题长度不能超过200个字符',
-        'any.required': '标题是必填项'
-      }),
-    
-    content: Joi.string()
-      .min(1)
-      .required()
-      .messages({
-        'string.min': '内容不能为空',
-        'any.required': '内容是必填项'
-      }),
-    
-    summary: Joi.string().max(500).allow('').messages({
-      'string.max': '摘要长度不能超过500个字符'
+    title: Joi.string().min(1).max(200).required().messages({
+      'string.min': '标题不能为空',
+      'string.max': '标题长度不能超过200个字符',
+      'any.required': '标题是必填项'
     }),
-    
-    cover_image: Joi.string().uri().allow('').messages({
-      'string.uri': '封面图片必须是有效的URL'
+    content: Joi.string().min(1).required().messages({
+      'string.min': '内容不能为空',
+      'any.required': '内容是必填项'
     }),
-    
+    summary: Joi.string().max(500).allow('').messages({ 'string.max': '摘要长度不能超过500个字符' }),
+    cover_image: Joi.string().uri().allow('').messages({ 'string.uri': '封面图片必须是有效的URL' }),
     author_id: Joi.number().integer().positive().required().messages({
       'number.positive': '作者ID必须是正整数',
       'any.required': '作者ID是必填项'
     }),
-    
     tags: Joi.array().items(Joi.number().integer().positive()),
     is_published: Joi.boolean().default(false),
     is_choice: Joi.boolean().default(false),
     need_time: Joi.number().integer().min(0).default(0)
   }),
-
   update: Joi.object({
     title: Joi.string().min(1).max(200),
     content: Joi.string().min(1),
@@ -287,6 +268,31 @@ const paginationValidation = Joi.object({
   sortOrder: Joi.string().valid('ASC', 'DESC').default('DESC')
 });
 
+// 通用校验中间件
+function validateBody(schema) {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
+    if (error) {
+      const message = error.details.map(d => d.message).join('; ');
+      return fail(res, message, 400);
+    }
+    req.body = value;
+    next();
+  };
+}
+
+function validateQuery(schema) {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req.query, { abortEarly: false, stripUnknown: true });
+    if (error) {
+      const message = error.details.map(d => d.message).join('; ');
+      return fail(res, message, 400);
+    }
+    req.query = value;
+    next();
+  };
+}
+
 module.exports = {
   userValidation,
   blogValidation,
@@ -295,5 +301,7 @@ module.exports = {
   tagValidation,
   commentValidation,
   daySentenceValidation,
-  paginationValidation
+  paginationValidation,
+  validateBody,
+  validateQuery,
 };

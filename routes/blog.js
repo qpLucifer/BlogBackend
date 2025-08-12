@@ -163,6 +163,10 @@ router.post('/:id/view', catchAsync(async (req, res) => {
 // 新增博客
 router.post('/add',
   checkMenuPermission('博客管理','can_create'),
+  (req, res, next) => {
+    const { validateBody, blogValidation } = require('../utils/validation');
+    return validateBody(blogValidation.create)(req, res, next);
+  },
   catchAsync(async (req, res) => {
     const { title, cover_image, content, summary, author_id, tags, is_published, is_choice, need_time } = req.body;
 
@@ -191,45 +195,52 @@ router.post('/add',
 );
 
 // 更新博客
-router.put('/update/:id', checkMenuPermission('博客管理','can_update'), catchAsync(async (req, res) => {
-  const { title, cover_image, content, summary, author_id, tags, is_published, is_choice, need_time } = req.body;
+router.put('/update/:id',
+  checkMenuPermission('博客管理','can_update'),
+  (req, res, next) => {
+    const { validateBody, blogValidation } = require('../utils/validation');
+    return validateBody(blogValidation.update)(req, res, next);
+  },
+  catchAsync(async (req, res) => {
+    const { title, cover_image, content, summary, author_id, tags, is_published, is_choice, need_time } = req.body;
 
-  const blog = await Blog.findByPk(req.params.id);
-  if (!blog) {
-    return fail(res, '博客不存在', 404);
-  }
+    const blog = await Blog.findByPk(req.params.id);
+    if (!blog) {
+      return fail(res, '博客不存在', 404);
+    }
 
-  const oldTitle = blog.title;
-  const oldPublished = blog.is_published;
+    const oldTitle = blog.title;
+    const oldPublished = blog.is_published;
 
-  await blog.update({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });
-  if (tags) {
-    await blog.setTags(tags);
-  }
+    await blog.update({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });
+    if (tags) {
+      await blog.setTags(tags);
+    }
 
-  // 记录操作日志
-  await SimpleLogger.logOperation(
-    req.user.id,
-    req.user.username,
-    'update',
-    'blog',
-    blog.id,
-    blog.title,
-    req.ip,
-    req.get('User-Agent'),
-    {
-      old_title: oldTitle,
-      new_title: title,
-      old_published: oldPublished,
-      new_published: is_published,
-      tags: tags || []
-    },
-    'operation',
-    'success'
-  );
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'update',
+      'blog',
+      blog.id,
+      blog.title,
+      req.ip,
+      req.get('User-Agent'),
+      {
+        old_title: oldTitle,
+        new_title: title,
+        old_published: oldPublished,
+        new_published: is_published,
+        tags: tags || []
+      },
+      'operation',
+      'success'
+    );
 
-  success(res, blog, '更新博客成功');
-}));
+    success(res, blog, '更新博客成功');
+  })
+);
 
 // 删除博客
 router.delete('/delete/:id', checkMenuPermission('博客管理','can_delete'), catchAsync(async (req, res) => {

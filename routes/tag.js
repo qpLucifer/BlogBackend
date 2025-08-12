@@ -48,80 +48,94 @@ router.get('/listPage', checkMenuPermission('标签管理','can_read'), catchAsy
 }));
 
 // 新增标签
-router.post('/add', checkMenuPermission('标签管理','can_create'), catchAsync(async (req, res) => {
-  const { name } = req.body;
-  try {
-    const tag = await Tag.create({ name });
+router.post('/add',
+  checkMenuPermission('标签管理','can_create'),
+  (req, res, next) => {
+    const { validateBody, tagValidation } = require('../utils/validation');
+    return validateBody(tagValidation.create)(req, res, next);
+  },
+  catchAsync(async (req, res) => {
+    const { name } = req.body;
+    try {
+      const tag = await Tag.create({ name });
 
-    // 记录操作日志
-    await SimpleLogger.logOperation(
-      req.user.id,
-      req.user.username,
-      'create',
-      'tag',
-      tag.id,
-      tag.name,
-      req.ip,
-      req.get('User-Agent'),
-      { tag_name: name },
-      'operation',
-      'success'
-    );
-
-    success(res, tag, '新增标签成功', 200);
-  } catch (error) {
-    if (error.name === 'SequelizeUniqueConstraintError') {
       // 记录操作日志
       await SimpleLogger.logOperation(
         req.user.id,
         req.user.username,
         'create',
         'tag',
-        null,
-        name,
+        tag.id,
+        tag.name,
         req.ip,
         req.get('User-Agent'),
-        {
-          error_type: 'unique_constraint',
-          error_message: '标签名称已存在',
-          tag_name: name
-        },
-        'error',
-        'failed'
+        { tag_name: name },
+        'operation',
+        'success'
       );
-      return fail(res, '标签已存在', 400);
+
+      success(res, tag, '新增标签成功', 200);
+    } catch (error) {
+      if (error.name === 'SequelizeUniqueConstraintError') {
+        // 记录操作日志
+        await SimpleLogger.logOperation(
+          req.user.id,
+          req.user.username,
+          'create',
+          'tag',
+          null,
+          name,
+          req.ip,
+          req.get('User-Agent'),
+          {
+            error_type: 'unique_constraint',
+            error_message: '标签名称已存在',
+            tag_name: name
+          },
+          'error',
+          'failed'
+        );
+        return fail(res, '标签已存在', 400);
+      }
+      throw error; // 让catchAsync处理其他错误
     }
-    throw error; // 让catchAsync处理其他错误
-  }
-}));
+  })
+);
 
 // 更新标签
-router.put('/update/:id', checkMenuPermission('标签管理','can_update'), catchAsync(async (req, res) => {
-  const { name } = req.body;
-  const tag = await Tag.findByPk(req.params.id);
-  if (!tag) {
-    return fail(res, '标签不存在', 404);
-  }
+router.put('/update/:id',
+  checkMenuPermission('标签管理','can_update'),
+  (req, res, next) => {
+    const { validateBody, tagValidation } = require('../utils/validation');
+    return validateBody(tagValidation.update)(req, res, next);
+  },
+  catchAsync(async (req, res) => {
+    const { name } = req.body;
+    const tag = await Tag.findByPk(req.params.id);
+    if (!tag) {
+      return fail(res, '标签不存在', 404);
+    }
 
-  const oldName = tag.name;
-  await tag.update({ name });
+    const oldName = tag.name;
+    await tag.update({ name });
 
-  // 记录操作日志
-  await SimpleLogger.logOperation(
-    req.user.id,
-    req.user.username,
-    'update',
-    'tag',
-    tag.id,
-    tag.name,
-    req.ip,
-    req.get('User-Agent'),
-    { old_name: oldName, new_name: name },
-    'operation'
-  );
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'update',
+      'tag',
+      tag.id,
+      tag.name,
+      req.ip,
+      req.get('User-Agent'),
+      { old_name: oldName, new_name: name },
+      'operation'
+    );
 
-  success(res, tag, '更新标签成功');
-}));
+    success(res, tag, '更新标签成功');
+  })
+);
 
 // 删除标签
 router.delete('/delete/:id', checkMenuPermission('标签管理','can_delete'), catchAsync(async (req, res) => {

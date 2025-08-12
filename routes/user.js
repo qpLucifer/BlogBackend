@@ -69,6 +69,11 @@ router.get('/listPage',checkMenuPermission('用户管理','can_read'), catchAsyn
 // 新增用户
 router.post('/users',
   checkMenuPermission('用户管理','can_create'),
+  (req, res, next) => {
+    const { register } = require('../utils/validation').userValidation();
+    const { validateBody } = require('../utils/validation');
+    return validateBody(register)(req, res, next);
+  },
   catchAsync(async (req, res) => {
     const { username, email, password, roles } = req.body;
     const hashedPassword = await hashPassword(password);
@@ -99,6 +104,11 @@ router.post('/users',
 // 更新用户
 router.put('/users/:id',
   checkMenuPermission('用户管理','can_update'),
+  (req, res, next) => {
+    const { update } = require('../utils/validation').userValidation();
+    const { validateBody } = require('../utils/validation');
+    return validateBody(update)(req, res, next);
+  },
   catchAsync(async (req, res) => {
     const { username, email, is_active, roles } = req.body;
     const user = await User.findByPk(req.params.id);
