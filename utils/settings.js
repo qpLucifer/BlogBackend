@@ -1,4 +1,5 @@
 // utils/settings.js - 运行时系统设置（内存持久）
+const logger = require('../config/winston'); // Import Winston logger
 require('dotenv').config();
 
 const DEFAULTS = {
@@ -99,7 +100,7 @@ async function loadFromDb() {
     }
     return settings;
   } catch (e) {
-    console.error('加载系统设置失败:', e.message);
+    logger.error('加载系统设置失败:', e.message);
     return settings;
   }
 }

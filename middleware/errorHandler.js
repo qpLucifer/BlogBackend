@@ -1,4 +1,5 @@
 // middleware/errorHandler.js - 统一错误处理
+const logger = require('../config/winston'); // Import Winston logger
 const SimpleLogger = require('../utils/logger');
 
 // 资源不存在错误类 - 用于404处理
@@ -60,7 +61,7 @@ const globalErrorHandler = async (err, req, res, next) => {
     );
   } catch (logError) {
     // 如果日志记录失败，不要影响错误响应
-    console.error('记录错误日志失败:', logError);
+    logger.error('记录错误日志失败:', logError);
   }
 
   // 发送错误响应
@@ -101,7 +102,7 @@ const notFoundHandler = async (req, res, next) => {
       'failed'
     );
   } catch (logError) {
-    console.error('记录404日志失败:', logError);
+    logger.error('记录404日志失败:', logError);
   }
 
   const err = new NotFoundError(`路径 ${req.originalUrl}`);

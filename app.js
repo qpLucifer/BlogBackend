@@ -1,7 +1,15 @@
 let express = require('express');
 let path = require('path');
 let cookieParser = require('cookie-parser');
-let logger = require('morgan');
+const logger = require('./config/winston'); // Import Winston logger
+const morgan = require('morgan'); // Keep morgan for middleware setup
+
+// Create a stream for morgan to pipe to winston
+const morganStream = {
+  write: (message) => {
+    logger.info(message.trim());
+  },
+};
 // 加载环境变量
 require('dotenv').config();
 
@@ -34,7 +42,7 @@ app.set('view engine', 'jade');
 
 
 // 基础中间件
-app.use(logger('dev'));
+app.use(morgan('dev', { stream: morganStream })); // Use morgan with winston stream
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use(cookieParser());
@@ -61,7 +69,7 @@ const corsOptions = {
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.log('CORS 阻止了来自以下地址的请求:', origin);
+      logger.warn('CORS 阻止了来自以下地址的请求:', origin);
       callback(new Error('不允许的 CORS 来源'));
     }
   },
@@ -104,14 +112,14 @@ const initDatabase = async () => {
   try {
     // 测试数据库连接
     await sequelize.authenticate();
-    console.log('✅ 数据库连接成功');
+    logger.info('✅ 数据库连接成功');
 
     // 同步数据库模型
     await sequelize.sync({
       alter: true,
       logging: process.env.NODE_ENV === 'development' ? console.log : false
     });
-    console.log('✅ 数据库同步成功');
+    logger.info('✅ 数据库同步成功');
 
     // 初始化角色和权限
     require('./utils/initRoles')();
@@ -121,19 +129,17 @@ const initDatabase = async () => {
     const { refreshLimiters } = require('./middleware/security');
     await loadFromDb();
     refreshLimiters();
-    console.log('✅ 初始数据加载完成');
+    logger.info('✅ 初始数据加载完成');
 
   } catch (error) {
-    console.error('❌ 数据库初始化失败:', error.message);
+    logger.error('❌ 数据库初始化失败:', error.message);
 
     // 针对索引超限错误的特殊处理
     if (error.message.includes('Too many keys')) {
-      console.error('');
-      console.error('🔧 检测到索引超限错误，请运行以下命令修复:');
-      console.error('   npm run db check     # 检查索引状态');
-      console.error('   npm run db fix --exec # 修复重复索引');
-      console.error('   npm run db reset     # 重置数据库（删除数据）');
-      console.error('');
+      logger.error('🔧 检测到索引超限错误，请运行以下命令修复:');
+      logger.error('   npm run db check     # 检查索引状态');
+      logger.error('   npm run db fix --exec # 修复重复索引');
+      logger.error('   npm run db reset     # 重置数据库（删除数据）');
     }
 
     // 生产环境下退出进程
@@ -144,7 +150,7 @@ const initDatabase = async () => {
 };
 
 // 启动数据库初始化（异步执行，不阻塞应用启动）
-initDatabase().catch(console.error);
+initDatabase().catch(logger.error);
 
 // 启动统计服务
 const statsService = require('./utils/statsService');

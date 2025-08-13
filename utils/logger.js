@@ -1,4 +1,5 @@
 // utils/logger.js - 简化的操作日志系统
+const logger = require('../config/winston'); // Import Winston logger
 const { UserLog } = require('../models/admin');
 const wsManager = require('./websocket');
 
@@ -18,7 +19,7 @@ class SimpleLogger {
         details: JSON.stringify({ reason })
       });
     } catch (error) {
-      console.error('记录登录日志失败:', error);
+      logger.error('记录登录日志失败:', error);
     }
   }
 
@@ -35,7 +36,7 @@ class SimpleLogger {
         status: 'success'
       });
     } catch (error) {
-      console.error('记录登出日志失败:', error);
+      logger.error('记录登出日志失败:', error);
     }
   }
 
@@ -67,7 +68,7 @@ class SimpleLogger {
         wsManager.pushErrorLog(errorLogDataNum);
       }
     } catch (error) {
-      console.error('记录操作日志失败:', error);
+      logger.error('记录操作日志失败:', error);
     }
   }
 
@@ -94,7 +95,7 @@ class SimpleLogger {
         })
       });
     } catch (error) {
-      console.error('记录错误日志失败:', error);
+      logger.error('记录错误日志失败:', error);
     }
   }
 }
