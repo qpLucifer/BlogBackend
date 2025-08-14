@@ -20,9 +20,9 @@ class StatsService {
     this.updateStats();
     
     // 每30秒更新一次统计数据
-    this.updateInterval = setInterval(() => {
-      this.updateStats();
-    }, 30000);
+    // this.updateInterval = setInterval(() => {
+    //   this.updateStats();
+    // }, 30000);
   }
 
   // 停止统计服务

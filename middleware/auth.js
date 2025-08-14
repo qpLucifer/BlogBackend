@@ -35,7 +35,7 @@ const authenticate = async (req, res, next) => {
     
     // 查找用户并附加到请求对象
     const user = await User.findByPk(decoded.id, {
-      attributes: ['id', 'username', 'is_active'],
+      attributes: ['id', 'username', 'is_active', 'active_token'],
       include: [{
         model: Role,
         attributes: ['id', 'name'],
@@ -66,6 +66,10 @@ const authenticate = async (req, res, next) => {
         'failed'
       );
       return fail(res, '无效用户', 401);
+    }
+
+    if (user.active_token && user.active_token !== token) {
+        return fail(res, '您的账号已在别处登录，请重新登录', 401);
     }
 
     if (!user.is_active) {

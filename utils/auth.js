@@ -5,6 +5,7 @@ const { User } = require('../models/admin');
 const { Role } = require('../models/admin');
 const { Menu } = require('../models/admin');
 const { buildMenuTree } = require('../utils/tool');
+const wsManager = require('./websocket');
 
 // 密码加密
 const hashPassword = async (password) => {
@@ -92,6 +93,17 @@ const loginUser = async (username, password) => {
   if (!user.is_active) {
     throw new Error('用户账户已被禁用');
   }
+
+  // 如果用户已通过其他方式连接，则发送强制下线通知
+  if (user.socket_id) {
+    wsManager.sendToUser(user.id, 'force_logout', {
+      message: '您的账号已在别处登录，当前会话已断开'
+    });
+  }
+
+  const token = generateToken(user);
+  user.active_token = token;
+  await user.save();
 
   const roleMenu = [];
   const menus = user.roles.map(role => role.menus).flat();
