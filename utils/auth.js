@@ -94,13 +94,6 @@ const loginUser = async (username, password) => {
     throw new Error('用户账户已被禁用');
   }
 
-  // 如果用户已通过其他方式连接，则发送强制下线通知
-  if (user.socket_id) {
-    wsManager.sendToUser(user.id, 'force_logout', {
-      message: '您的账号已在别处登录，当前会话已断开'
-    });
-  }
-
   const token = generateToken(user);
   user.active_token = token;
   await user.save();

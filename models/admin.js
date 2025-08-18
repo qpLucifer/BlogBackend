@@ -13,7 +13,6 @@ const User = sequelize.define(
     is_active: { type: DataTypes.BOOLEAN, defaultValue: true },
     mood: { type: DataTypes.STRING(255), allowNull: true },
     signature: { type: DataTypes.STRING(255), allowNull: true },
-    socket_id: { type: DataTypes.STRING, allowNull: true },
     active_token: { type: DataTypes.STRING(500), allowNull: true },
   },
   {
