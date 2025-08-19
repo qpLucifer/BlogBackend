@@ -15,7 +15,6 @@ module.exports = async function() {
     { name: '角色管理', path: '/system/roles', icon: 'TeamOutlined', order: 8 },
     { name: '菜单管理', path: '/system/menus', icon: 'MenuOutlined', order: 9 },
     { name: '日志管理', path: '/system/logs', icon: 'FileTextOutlined', order: 12 },
-    { name: '性能监控', path: '/system/performance', icon: 'DashboardOutlined', order: 13 },
     { name: '系统设置', path: '/system/settings', icon: 'SettingOutlined', order: 15 },
     { name: '系统管理', path: '/system', icon: 'SettingOutlined', order: 14 },
     { name: '个人中心', path: '/profile', icon: 'UserOutlined', order: 11 },
@@ -61,11 +60,10 @@ module.exports = async function() {
     //分配父菜单
     const systemMenu = await Menu.findOne({ where: { name: '系统管理' } });
     const logsMenu = await Menu.findOne({ where: { name: '日志管理' } });
-    const performanceMenu = await Menu.findOne({ where: { name: '性能监控' } });
     const menusMenu = await Menu.findOne({ where: { name: '菜单管理' } });
     const usersMenu = await Menu.findOne({ where: { name: '用户管理' } });
     const rolesMenu = await Menu.findOne({ where: { name: '角色管理' } });
-  const systemSettingsMenu = await Menu.findOne({ where: { name: '系统设置' } });
+    const systemSettingsMenu = await Menu.findOne({ where: { name: '系统设置' } });
 
     const blogsManageMenu = await Menu.findOne({ where: { name: '博客管理' } });
     const blogsMenu = await Menu.findOne({ where: { name: '博客列表' } });
@@ -77,7 +75,6 @@ module.exports = async function() {
     await tagsMenu.update({ parent_id: blogsManageMenu.id });
 
     await logsMenu.update({ parent_id: systemMenu.id });
-    await performanceMenu.update({ parent_id: systemMenu.id });
     await menusMenu.update({ parent_id: systemMenu.id });
     await usersMenu.update({ parent_id: systemMenu.id });
     await rolesMenu.update({ parent_id: systemMenu.id });

@@ -68,7 +68,7 @@ const blogValidation = {
       'any.required': '内容是必填项'
     }),
     summary: Joi.string().max(500).allow('').messages({ 'string.max': '摘要长度不能超过500个字符' }),
-    cover_image: Joi.string().uri().allow('').messages({ 'string.uri': '封面图片必须是有效的URL' }),
+    // cover_image: Joi.string().uri().allow('').messages({ 'string.uri': '封面图片必须是有效的URL' }),
     author_id: Joi.number().integer().positive().required().messages({
       'number.positive': '作者ID必须是正整数',
       'any.required': '作者ID是必填项'
