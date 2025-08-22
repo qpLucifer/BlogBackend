@@ -21,10 +21,10 @@ module.exports = {
     error_file: './logs/error.log',
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     // 进程管理
-    min_uptime: '10s',
-    max_restarts: 10,
+    min_uptime: '5s',
+    max_restarts: 5,
     // 监听配置
-    listen_timeout: 8000,
-    kill_timeout: 5000
+    listen_timeout: 5000,
+    kill_timeout: 3000
   }]
 };

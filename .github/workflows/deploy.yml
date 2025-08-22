@@ -31,7 +31,7 @@ jobs:
           target: ${{ secrets.TARGET_DIR }}
           strip_components: 0
 
-      - name: SSH and setup environment
+      - name: Setup environment file
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -58,11 +58,44 @@ jobs:
             # 设置文件权限
             chmod 600 .env
             
-            # 安装依赖
+            echo "环境文件创建完成"
+
+      - name: Install production dependencies
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.TARGET_DIR }}
+            echo "开始安装生产依赖..."
             npm install --production
-            
-            # 重启服务
+            echo "依赖安装完成"
+
+      - name: Restart PM2 service
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.TARGET_DIR }}
+            echo "重启PM2服务..."
             pm2 reload blog-backend || pm2 start ecosystem.config.js --env production
+            echo "PM2服务重启完成"
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.TARGET_DIR }}
+            
+            # 等待服务启动
+            echo "等待服务启动..."
+            sleep 5
             
             # 检查环境变量
             echo "=== 检查环境变量 ==="
@@ -71,9 +104,13 @@ jobs:
             # 检查服务状态
             echo "=== 检查服务状态 ==="
             pm2 status
-            pm2 logs blog-backend --lines 10
             
             # 检查端口监听
             echo "=== 检查端口监听 ==="
             netstat -tlnp | grep :3000 || echo "端口3000未监听"
-            curl -s http://localhost:3000/api/health || echo "本地访问失败"
+            
+            # 测试健康检查
+            echo "=== 测试健康检查 ==="
+            curl -s --max-time 5 http://localhost:3000/api/health || echo "本地访问失败"
+            
+            echo "部署验证完成"
