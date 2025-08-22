@@ -6,9 +6,12 @@ module.exports = {
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
+    // 开发环境配置
     env: {
-      NODE_ENV: 'development'
+      NODE_ENV: 'development',
+      PORT: 3000
     },
+    // 生产环境配置
     env_production: {
       NODE_ENV: 'production',
       DB_DIALECT: 'mysql',
@@ -20,10 +23,8 @@ module.exports = {
       PORT: 3000,
       JWT_SECRET: 'money_roc_secret_key',
       JWT_EXPIRES_IN: '1d',
-      CORS_ORIGIN: 'https://www.jiayizhou.top:3002',
+      CORS_ORIGIN: 'https://www.jiayizhou.top:3002'
     },
-    // 确保监听所有网络接口
-    args: '--env production',
     // 日志配置
     log_file: './logs/combined.log',
     out_file: './logs/out.log',
