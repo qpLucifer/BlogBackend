@@ -85,6 +85,16 @@ app.options('*', cors(corsOptions));
 // 全局API速率限制（在 CORS 之后）
 app.use('/api', apiLimiter);
 
+// 健康检查路由
+app.get('/api/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV,
+    version: require('./package.json').version
+  });
+});
 
 // 使用auth路由（登录限制已在路由内部配置）
 app.use('/api/', auth);
