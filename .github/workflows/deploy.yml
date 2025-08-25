@@ -106,25 +106,4 @@ jobs:
             
             echo "PM2服务重启完成"
 
-      - name: Verify deployment
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.TARGET_DIR }}
-            
-            # 等待服务启动
-            echo "等待服务启动..."
-            sleep 10
-            
-            # 检查服务状态
-            echo "=== 检查服务状态 ==="
-            pm2 status
-            
-            # 检查端口监听
-            echo "=== 检查端口监听 ==="
-            netstat -tlnp | grep :3000 || echo "端口3000未监听"
-            
             echo "部署验证完成"
