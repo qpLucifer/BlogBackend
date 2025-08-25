@@ -25,15 +25,12 @@ const sequelize = new Sequelize(database, username, password, {
     handleDisconnects: true
   },
 
-  // 数据库连接选项
+  // 数据库连接选项 - 修复MySQL2配置警告
   dialectOptions: {
     connectTimeout: 60000,
-    acquireTimeout: 60000,
-    timeout: 60000,
-    // 减少连接选项，避免超过64个键的限制
+    // 移除无效的配置选项
     charset: 'utf8mb4',
-    collate: 'utf8mb4_unicode_ci',
-    // 移除可能导致键过多的选项
+    // 移除 collate 配置，MySQL2不支持
     supportBigNumbers: true,
     bigNumberStrings: true
   },
@@ -109,11 +106,22 @@ process.on('SIGTERM', async () => {
   }
 });
 
-// 初始化并导出 SystemSetting 模型
+// 初始化模型 - 使用工厂函数避免循环依赖
+const { createAdminModels } = require('./admin');
+const { createBlogModels } = require('./blog');
+const { createBlogSentenceModel } = require('./blogSentence');
 const createSystemSetting = require('./system');
+
+// 创建所有模型
+const adminModels = createAdminModels(sequelize);
+const blogModels = createBlogModels(sequelize);
+const blogSentenceModels = createBlogSentenceModel(sequelize);
 const SystemSetting = createSystemSetting(sequelize);
 
 module.exports = {
   sequelize,
   SystemSetting,
+  ...adminModels,
+  ...blogModels,
+  ...blogSentenceModels
 };

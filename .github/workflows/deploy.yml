@@ -190,8 +190,4 @@ jobs:
             echo "=== 检查PM2环境变量 ==="
             pm2 env 0 || echo "无法获取PM2环境变量"
             
-            # 检查PM2日志
-            echo "=== 检查PM2日志 ==="
-            pm2 logs blog-backend --lines 10 || echo "无法获取PM2日志"
-            
             echo "部署验证完成"
