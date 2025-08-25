@@ -59,6 +59,65 @@ jobs:
             npm install --production
             echo "依赖安装完成"
 
+      - name: Update PM2 ecosystem config
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.TARGET_DIR }}
+            echo "更新PM2配置文件..."
+            
+            # 备份原配置文件
+            cp ecosystem.config.js ecosystem.config.js.backup
+            
+            # 使用环境变量更新配置文件
+            cat > ecosystem.config.js << 'EOF'
+            module.exports = {
+              apps: [{
+                name: 'blog-backend',
+                script: './bin/www',
+                instances: 1,
+                autorestart: true,
+                watch: false,
+                max_memory_restart: '1G',
+                // 开发环境配置
+                env: {
+                  NODE_ENV: 'development',
+                  PORT: 3000
+                },
+                // 生产环境配置
+                env_production: {
+                  NODE_ENV: 'production',
+                  DB_DIALECT: 'mysql',
+                  DB_HOST: '${{ secrets.DB_HOST }}',
+                  DB_PORT: 3306,
+                  DB_NAME: '${{ secrets.DB_NAME }}',
+                  DB_USER: '${{ secrets.DB_USER }}',
+                  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}',
+                  PORT: 3000,
+                  JWT_SECRET: '${{ secrets.JWT_SECRET }}',
+                  JWT_EXPIRES_IN: '1d',
+                  CORS_ORIGIN: '${{ secrets.CORS_ORIGIN }}'
+                },
+                // 日志配置
+                log_file: './logs/combined.log',
+                out_file: './logs/out.log',
+                error_file: './logs/error.log',
+                log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+                // 进程管理
+                min_uptime: '5s',
+                max_restarts: 5,
+                // 监听配置
+                listen_timeout: 5000,
+                kill_timeout: 3000
+              }]
+            };
+            EOF
+            
+            echo "PM2配置文件更新完成"
+
       - name: Restart PM2 service
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -68,14 +127,17 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_DIR }}
             echo "重启PM2服务..."
-            # 设置环境变量
-            export DB_HOST=${{ secrets.SERVER_IP }}
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            export JWT_SECRET=${{ secrets.JWT_SECRET }}
-            export CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
             
-            # 重启PM2服务
-            pm2 reload blog-backend || pm2 start ecosystem.config.js --env production --only blog-backend
+            # 停止现有服务
+            pm2 stop blog-backend || echo "服务未运行"
+            pm2 delete blog-backend || echo "服务未存在"
+            
+            # 使用生产环境配置启动服务
+            pm2 start ecosystem.config.js --env production --only blog-backend
+            
+            # 保存PM2配置
+            pm2 save
+            
             echo "PM2服务重启完成"
 
       - name: Verify deployment
@@ -89,7 +151,7 @@ jobs:
             
             # 等待服务启动
             echo "等待服务启动..."
-            sleep 5
+            sleep 10
             
             # 检查环境变量
             echo "=== 检查环境变量 ==="
@@ -102,5 +164,9 @@ jobs:
             # 检查端口监听
             echo "=== 检查端口监听 ==="
             netstat -tlnp | grep :3000 || echo "端口3000未监听"
+            
+            # 检查PM2环境变量
+            echo "=== 检查PM2环境变量 ==="
+            pm2 env blog-backend
             
             echo "部署验证完成"
