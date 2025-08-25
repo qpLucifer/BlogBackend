@@ -40,11 +40,10 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_DIR }}
             
+            # 删除旧的.env文件，使用PM2配置文件管理环境变量
             rm -f .env
             
-            echo "已删除.env文件，将使用PM2环境变量"
-            
-            echo "环境文件创建完成"
+            echo "环境配置完成，将使用PM2配置文件管理环境变量"
 
       - name: Install production dependencies
         uses: appleboy/ssh-action@v1.0.3
@@ -55,35 +54,10 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_DIR }}
             echo "开始安装生产依赖..."
-            npm install --production
+            npm install
             echo "依赖安装完成"
 
-      - name: Create .env file
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.TARGET_DIR }}
-            echo "创建.env文件..."
-            
-            # 创建.env文件
-            cat > .env << EOF
-            NODE_ENV=production
-            DB_DIALECT=mysql
-            DB_HOST=39.104.13.43
-            DB_PORT=3306
-            DB_NAME=blogDb
-            DB_USER=blog_user
-            DB_PASSWORD=7jWW2waA74yZpGEx
-            PORT=3000
-            JWT_SECRET=money_roc_secret_key
-            JWT_EXPIRES_IN=1d
-            CORS_ORIGIN=https://www.jiayizhou.top:3002
-            EOF
-            
-            echo ".env文件创建完成"
+
 
       - name: Restart PM2 service
         uses: appleboy/ssh-action@v1.0.3
@@ -95,36 +69,20 @@ jobs:
             cd ${{ secrets.TARGET_DIR }}
             echo "重启PM2服务..."
             
+            # 确保logs目录存在
+            mkdir -p logs
+            
             # 清理PM2进程列表
             pm2 kill
             
-            # 启动服务
+            # 使用ecosystem配置文件启动服务
             pm2 start ecosystem.config.js
             
             # 保存PM2配置
             pm2 save
             
-            echo "PM2服务重启完成"
-
-      - name: Verify deployment
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.TARGET_DIR }}
-            
-            # 等待服务启动
-            echo "等待服务启动..."
-            sleep 10
-            
-            # 检查服务状态
-            echo "=== 检查服务状态 ==="
+            # 显示PM2状态
             pm2 status
             
-            # 检查端口监听
-            echo "=== 检查端口监听 ==="
-            netstat -tlnp | grep :3000 || echo "端口3000未监听"
-            
+            echo "PM2服务重启完成"
             echo "部署验证完成"
