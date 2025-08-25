@@ -40,7 +40,6 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_DIR }}
             
-            # 删除旧的.env文件（避免与PM2环境变量冲突）
             rm -f .env
             
             echo "已删除.env文件，将使用PM2环境变量"
@@ -86,56 +85,6 @@ jobs:
             
             echo ".env文件创建完成"
 
-      - name: Update PM2 ecosystem config
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.TARGET_DIR }}
-            echo "更新PM2配置文件..."
-            
-            # 备份原配置文件
-            cp ecosystem.config.js ecosystem.config.js.backup
-            
-            # 创建简化的PM2配置文件
-            cat > ecosystem.config.js << 'EOF'
-            module.exports = {
-              apps: [{
-                name: 'blog-backend',
-                script: './bin/www',
-                instances: 1,
-                autorestart: true,
-                watch: false,
-                max_memory_restart: '1G',
-                env: {
-                  NODE_ENV: 'production',
-                  DB_DIALECT: 'mysql',
-                  DB_HOST: '39.104.13.43',
-                  DB_PORT: 3306,
-                  DB_NAME: 'blogDb',
-                  DB_USER: 'blog_user',
-                  DB_PASSWORD: '7jWW2waA74yZpGEx',
-                  PORT: 3000,
-                  JWT_SECRET: 'money_roc_secret_key',
-                  JWT_EXPIRES_IN: '1d',
-                  CORS_ORIGIN: 'https://www.jiayizhou.top:3002'
-                },
-                log_file: './logs/combined.log',
-                out_file: './logs/out.log',
-                error_file: './logs/error.log',
-                log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-                min_uptime: '5s',
-                max_restarts: 5,
-                listen_timeout: 5000,
-                kill_timeout: 3000
-              }]
-            };
-            EOF
-            
-            echo "PM2配置文件更新完成"
-
       - name: Restart PM2 service
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -145,10 +94,6 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_DIR }}
             echo "重启PM2服务..."
-            
-            # 停止现有服务
-            pm2 stop blog-backend 2>/dev/null || echo "服务未运行"
-            pm2 delete blog-backend 2>/dev/null || echo "服务未存在"
             
             # 清理PM2进程列表
             pm2 kill
@@ -174,10 +119,6 @@ jobs:
             echo "等待服务启动..."
             sleep 10
             
-            # 检查环境变量
-            echo "=== 检查环境变量 ==="
-            node simple-test.js
-            
             # 检查服务状态
             echo "=== 检查服务状态 ==="
             pm2 status
@@ -185,9 +126,5 @@ jobs:
             # 检查端口监听
             echo "=== 检查端口监听 ==="
             netstat -tlnp | grep :3000 || echo "端口3000未监听"
-            
-            # 检查PM2环境变量
-            echo "=== 检查PM2环境变量 ==="
-            pm2 env 0 || echo "无法获取PM2环境变量"
             
             echo "部署验证完成"
