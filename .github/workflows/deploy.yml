@@ -178,10 +178,6 @@ jobs:
             echo "=== 检查环境变量 ==="
             node simple-test.js
             
-            # 检查服务状态
-            echo "=== 检查服务状态 ==="
-            pm2 status
-            
             # 检查端口监听
             echo "=== 检查端口监听 ==="
             netstat -tlnp | grep :3000 || echo "端口3000未监听"
