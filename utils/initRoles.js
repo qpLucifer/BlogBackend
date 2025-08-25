@@ -1,6 +1,7 @@
 // utils/initRoles.js - 初始化角色和权限
 module.exports = async function() {
-  const { Role, User, Menu } = require('../models/admin');
+  // 动态导入模型以避免循环依赖
+  const { Role, Menu } = require('../models');
   const { registerUser } = require('./auth');
   
   // 菜单配置常量

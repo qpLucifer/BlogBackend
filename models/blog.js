@@ -1,4 +1,3 @@
-const { sequelize } = require("./index");
 const { DataTypes } = require("sequelize");
 
 // models/blog.js - 博客相关模型

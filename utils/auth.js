@@ -1,9 +1,9 @@
 // utils/auth.js - 认证工具
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { User } = require('../models/admin');
-const { Role } = require('../models/admin');
-const { Menu } = require('../models/admin');
+// 动态导入模型以避免循环依赖
+// 动态导入模型以避免循环依赖
+// 动态导入模型以避免循环依赖
 const { buildMenuTree } = require('../utils/tool');
 const wsManager = require('./websocket');
 
@@ -33,6 +33,7 @@ const generateToken = (user) => {
 
 // 用户注册
 const registerUser = async (username, password, email, is_active, role_ids=[]) => {
+  const { User, Role } = require('../models');
   if (!role_ids || role_ids.length === 0) {
     throw new Error('请选择用户角色');
   }
@@ -72,6 +73,7 @@ const registerUser = async (username, password, email, is_active, role_ids=[]) =
 
 // 用户登录
 const loginUser = async (username, password) => {
+  const { User, Role, Menu } = require('../models');
   const user = await User.findOne({ 
     where: { username },
     include: [{

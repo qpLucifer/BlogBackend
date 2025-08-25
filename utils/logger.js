@@ -1,6 +1,6 @@
 // utils/logger.js - 简化的操作日志系统
 const logger = require('../config/winston'); // Import Winston logger
-const { UserLog } = require('../models/admin');
+// 动态导入模型以避免循环依赖
 const wsManager = require('./websocket');
 
 // 简化的日志记录器
@@ -8,6 +8,7 @@ class SimpleLogger {
   // 记录用户登录
   static async logLogin(username, ip, success = true, reason = '', userAgent = '') {
     try {
+      const { UserLog } = require('../models');
       await UserLog.create({
         username,
         action: 'login',
@@ -26,6 +27,7 @@ class SimpleLogger {
   // 记录用户登出
   static async logLogout(username, ip, userAgent = '') {
     try {
+      const { UserLog } = require('../models');
       await UserLog.create({
         username,
         action: 'logout',
@@ -43,6 +45,7 @@ class SimpleLogger {
   // 记录模块操作（增删改查）
   static async logOperation(userId, username, action, module, targetId = null, targetName = '', ip, userAgent = '', details = {}, logType = 'operation', status = 'success') {
     try {
+      const { UserLog } = require('../models');
       const logEntry = await UserLog.create({
         user_id: userId,
         username,
@@ -75,6 +78,7 @@ class SimpleLogger {
   // 记录错误日志（便捷方法）
   static async logError(userId, username, module, errorMessage, req, errorDetails = {}, logType = 'error') {
     try {
+      const { UserLog } = require('../models');
       await UserLog.create({
         user_id: userId,
         username,

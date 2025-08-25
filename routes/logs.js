@@ -5,7 +5,7 @@ const { success, fail } = require('../utils/response');
 const { catchAsync } = require('../middleware/errorHandler');
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
-const { UserLog } = require('../models/admin');
+// 动态导入模型以避免循环依赖
 const { Op } = require('sequelize');
 const wsManager = require('../utils/websocket');
 
@@ -70,6 +70,9 @@ router.get('/list',
       };
     }
 
+    // 动态导入模型以避免循环依赖
+    const { UserLog } = require('../models');
+    
     // 获取总数
     const total = await UserLog.count({ where: whereConditions });
 

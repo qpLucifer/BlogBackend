@@ -1,7 +1,6 @@
 // utils/websocket.js - WebSocket服务管理
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
-const { User, UserLog } = require('../models/admin');
 class WebSocketManager {
   constructor() {
     this.io = null;
@@ -34,6 +33,8 @@ class WebSocketManager {
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // 动态导入模型以避免循环依赖
+        const { User } = require('../models');
         const user = await User.findByPk(decoded.id, {
           attributes: ['id', 'username', 'is_active']
         });
@@ -78,6 +79,8 @@ class WebSocketManager {
 
         // 更新在线用户数
         this.updateOnlineUsers();
+        // 动态导入模型以避免循环依赖
+        const { UserLog } = require('../models');
         const errorLogDataNum = await UserLog.count({
           where: {
             // log_type: 'error',

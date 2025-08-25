@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkPermission, checkRole, checkMenuPermission } = require('../middleware/permissions');
-const { BlogSentence } = require('../models/blogSentence');
+// 动态导入模型以避免循环依赖
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
@@ -13,6 +13,7 @@ router.use(authenticate);
 
 // 获取所有每日一句
 router.get('/listAll', catchAsync(async (req, res) => {
+    const { BlogSentence } = require('../models');
     const sentences = await BlogSentence.findAll({
         attributes: ['id', 'auth', 'day_sentence'],
         order: [['id', 'DESC']]
@@ -22,6 +23,7 @@ router.get('/listAll', catchAsync(async (req, res) => {
 
 // 分页获取每日一句列表
 router.get('/listPage', checkMenuPermission('每日一句','can_read'), catchAsync(async (req, res) => {
+    const { BlogSentence } = require('../models');
     const { auth, day_sentence, pageSize = 10, currentPage = 1 } = req.query;
 
     // 构建查询条件
@@ -55,6 +57,7 @@ router.get('/listPage', checkMenuPermission('每日一句','can_read'), catchAsy
 
 // 添加每日一句
 router.post('/add', checkMenuPermission('每日一句','can_create'), catchAsync(async (req, res) => {
+    const { BlogSentence } = require('../models');
     const { day_sentence, auth } = req.body;
     if (!auth) {
         return fail(res, '作者是必填项', 400);

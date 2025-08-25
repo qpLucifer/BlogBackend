@@ -17,7 +17,8 @@ router.use(authenticate);
 
 // 获取所有用户
 router.get('/listAll', catchAsync(async (req, res) => {
-  const users = await User.findAll({
+  const { User } = require('../models');
+    const users = await User.findAll({
     attributes: ['id', 'username'],
   });
 
@@ -77,6 +78,7 @@ router.post('/users',
   catchAsync(async (req, res) => {
     const { username, email, password, roles } = req.body;
     const hashedPassword = await hashPassword(password);
+    const { User } = require('../models');
     const user = await User.create({ username, email, password_hash: hashedPassword });
     if (roles) {
       await user.setRoles(roles);
@@ -111,6 +113,7 @@ router.put('/users/:id',
   },
   catchAsync(async (req, res) => {
     const { username, email, is_active, roles } = req.body;
+    const { User } = require('../models');
     const user = await User.findByPk(req.params.id);
     if (!user) {
       return fail(res, '用户不存在', 404);
@@ -160,7 +163,8 @@ router.delete('/users/:id',checkMenuPermission('用户管理','can_delete'), cat
   }
 
   const username = user.username;
-  await user.destroy();
+  const { User } = require('../models');
+    await user.destroy();
 
   // 记录操作日志
   await SimpleLogger.logOperation(

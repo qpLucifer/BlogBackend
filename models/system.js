@@ -1,7 +1,6 @@
-const { sequelize } = require('./index');
 const { DataTypes } = require('sequelize');
 
-module.exports = (sequelizeInstance = sequelize) => {
+module.exports = (sequelizeInstance) => {
   // 简单持久化系统设置，单行表
   const SystemSetting = sequelizeInstance.define('SystemSetting', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: false, defaultValue: 1 },

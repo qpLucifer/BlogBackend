@@ -1,6 +1,5 @@
 // middleware/auth.js - 认证中间件
 const jwt = require('jsonwebtoken');
-const { User, Role, RoleMenu, Menu } = require('../models/admin');
 const { mergePermissions } = require('../utils/tool');
 const { fail } = require('../utils/response');
 const SimpleLogger = require('../utils/logger');
@@ -32,6 +31,9 @@ const authenticate = async (req, res, next) => {
     
     // 验证token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // 动态导入模型以避免循环依赖
+    const { User, Role, Menu } = require('../models');
     
     // 查找用户并附加到请求对象
     const user = await User.findByPk(decoded.id, {

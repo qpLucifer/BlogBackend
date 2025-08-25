@@ -2,10 +2,16 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
-const { Blog, Tag, BlogTag, Comment} = require('../models/blog');
-const { User } = require('../models/admin');
+
 const { Op } = require("sequelize");
 const { success, fail } = require('../utils/response');
+
+// 动态导入模型以避免循环依赖
+const getModels = () => {
+  const { Blog, Tag, BlogTag, Comment } = require('../models');
+  const { User } = require('../models');
+  return { Blog, Tag, BlogTag, Comment, User };
+};
 const SimpleLogger = require('../utils/logger');
 
 // 导入验证和性能监控
@@ -18,6 +24,7 @@ router.use(authenticate);
 
 // 获取所有博客列表
 router.get('/listAll', catchAsync(async (req, res) => {
+  const { Blog } = getModels();
   const blogs = await Blog.findAll({
     attributes: ['id', 'title'],
   });
@@ -26,6 +33,7 @@ router.get('/listAll', catchAsync(async (req, res) => {
 
 // 分页获取所有博客
 router.get('/listPage', checkMenuPermission('博客管理','can_read'), catchAsync(async (req, res) => {
+  const { Blog, Tag, User } = getModels();
   const { title, is_published, is_choice, author_id, pageSize, currentPage } = req.query;
   const titleQuery = title ? { title: { [Op.like]: `%${title}%` } } : {};
   const is_publishedQuery = is_published ? { is_published: is_published } : {};
@@ -57,6 +65,7 @@ router.get('/listPage', checkMenuPermission('博客管理','can_read'), catchAsy
   });
   let resBlogs = blogs;
   for (let i in resBlogs) {
+    const { User } = require('../models');
     const user = await User.findByPk(blogs[i].author_id);
     resBlogs[i].author_id = user.username
   }
@@ -70,6 +79,7 @@ router.get('/listPage', checkMenuPermission('博客管理','can_read'), catchAsy
 
 // 导出博客 - 必须在 /:id 路由之前
 router.get('/export', checkMenuPermission('博客管理','can_read'), catchAsync(async (req, res) => {
+  const { Blog, Tag, User } = getModels();
   const { title, is_published, is_choice, author_id } = req.query;
 
   // 构建查询条件
@@ -144,7 +154,8 @@ router.get('/export', checkMenuPermission('博客管理','can_read'), catchAsync
 
 // 获取单篇博客
 router.get('/:id', checkMenuPermission('博客管理','can_read'), catchAsync(async (req, res) => {
-  const blog = await Blog.findByPk(req.params.id, {
+  const { Blog } = require('../models');
+    const blog = await Blog.findByPk(req.params.id, {
     include: [{ model: Tag, as: 'tags', through: { attributes: [] } }]
   });
   if (!blog) {
@@ -170,6 +181,7 @@ router.post('/add',
   catchAsync(async (req, res) => {
     const { title, cover_image, content, summary, author_id, tags, is_published, is_choice, need_time } = req.body;
 
+    const { Blog } = require('../models');
     const blog = await Blog.create({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });
     if (tags && tags.length > 0) {
       await blog.setTags(tags);
@@ -212,6 +224,7 @@ router.put('/update/:id',
     const oldTitle = blog.title;
     const oldPublished = blog.is_published;
 
+    const { Blog } = require('../models');
     await blog.update({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });
     if (tags) {
       await blog.setTags(tags);
@@ -250,7 +263,8 @@ router.delete('/delete/:id', checkMenuPermission('博客管理','can_delete'), c
   }
 
   const blogTitle = blog.title;
-  await blog.destroy();
+  const { Blog } = require('../models');
+    await blog.destroy();
 
   // 记录操作日志
   await SimpleLogger.logOperation(

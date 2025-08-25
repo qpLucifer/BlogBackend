@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
-const { Comment } = require('../models/blog');
+// 动态导入模型以避免循环依赖
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
@@ -13,12 +13,14 @@ router.use(authenticate);
 
 // 获取所有评论
 router.get('/listAll', catchAsync(async (req, res) => {
+  const { Comment } = require('../models');
   const comments = await Comment.findAll();
   success(res, comments, '获取评论列表成功');
 }));
 
 // 分页获取评论列表
 router.get('/listPage', checkMenuPermission('评论管理','can_read'), catchAsync(async (req, res) => {
+  const { Comment } = require('../models');
   const { content, user_id, blog_id, parent_id, pageSize = 10, currentPage = 1 } = req.query;
 
     // 调试日志
@@ -122,6 +124,7 @@ router.post('/add',
   catchAsync(async (req, res) => {
     const { blog_id, user_id, content, parent_id } = req.body;
 
+    const { Comment } = require('../models');
     const comment = await Comment.create({ blog_id, user_id, content, parent_id });
 
     // 记录操作日志
@@ -159,6 +162,7 @@ router.put('/update/:id',
   },
   catchAsync(async (req, res) => {
     const { content } = req.body;
+    const { Comment } = require('../models');
     const comment = await Comment.findByPk(req.params.id);
     if (!comment) {
       return fail(res, '评论不存在', 404);
@@ -206,6 +210,7 @@ router.delete('/delete/:id',
       content: comment.content
     };
 
+    const { Comment } = require('../models');
     await comment.destroy();
 
     // 记录操作日志

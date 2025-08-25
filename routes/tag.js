@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkMenuPermission } = require('../middleware/permissions');
-const { Tag } = require('../models/blog');
+// 动态导入模型以避免循环依赖
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
@@ -13,7 +13,8 @@ router.use(authenticate);
 
 // 获取所有标签列表
 router.get('/listAll', catchAsync(async (req, res) => {
-  const tags = await Tag.findAll({
+  const { Tag } = require('../models');
+    const tags = await Tag.findAll({
     attributes: ['id', 'name'],
   });
   success(res, tags, '获取标签列表成功');
@@ -21,6 +22,7 @@ router.get('/listAll', catchAsync(async (req, res) => {
 
 // 分页获取所有标签
 router.get('/listPage', checkMenuPermission('标签管理','can_read'), catchAsync(async (req, res) => {
+  const { Tag } = require('../models');
   const { name, pageSize, currentPage } = req.query;
   // 获取总数
   const total = await Tag.count({
@@ -57,7 +59,8 @@ router.post('/add',
   catchAsync(async (req, res) => {
     const { name } = req.body;
     try {
-      const tag = await Tag.create({ name });
+      const { Tag } = require('../models');
+    const tag = await Tag.create({ name });
 
       // 记录操作日志
       await SimpleLogger.logOperation(
@@ -111,6 +114,7 @@ router.put('/update/:id',
   },
   catchAsync(async (req, res) => {
     const { name } = req.body;
+    const { Tag } = require('../models');
     const tag = await Tag.findByPk(req.params.id);
     if (!tag) {
       return fail(res, '标签不存在', 404);
@@ -145,7 +149,8 @@ router.delete('/delete/:id', checkMenuPermission('标签管理','can_delete'), c
   }
 
   const tagName = tag.name;
-  await tag.destroy();
+  const { Tag } = require('../models');
+    await tag.destroy();
 
   // 记录操作日志
   await SimpleLogger.logOperation(

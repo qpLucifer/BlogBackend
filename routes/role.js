@@ -14,7 +14,8 @@ router.use(authenticate);
 
 // 获取所有角色
 router.get('/listAll', catchAsync(async (req, res) => {
-  const roles = await Role.findAll({
+  const { Role } = require('../models');
+    const roles = await Role.findAll({
     attributes: ['id', 'name'],
   });
   success(res, roles, '获取角色列表成功');
@@ -57,7 +58,8 @@ router.get('/listPage', checkMenuPermission('角色管理','can_read'), catchAsy
 // 创建角色
 router.post('/roles', checkMenuPermission('角色管理','can_create'), catchAsync(async (req, res) => {
   const { name, description, menus } = req.body;
-  const role = await Role.create({ name, description });
+  const { Role } = require('../models');
+    const role = await Role.create({ name, description });
   if (menus && Array.isArray(menus)) {
     // 准备批量插入数据
     const menuPermissions = menus.map((menu) => ({
@@ -90,7 +92,8 @@ router.post('/roles', checkMenuPermission('角色管理','can_create'), catchAsy
 // 更新角色
 router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catchAsync(async (req, res) => {
   const { name, description, menus } = req.body;
-  const role = await Role.findByPk(req.params.id);
+  const { Role } = require('../models');
+    const role = await Role.findByPk(req.params.id);
   if (!role) {
     return fail(res, '角色不存在', 404);
   }
@@ -100,7 +103,8 @@ router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catch
 
   await role.update({ name, description });
   // 删除所有现有关联
-  await RoleMenu.destroy({ where: { role_id: role.id } });
+  const { RoleMenu } = require('../models');
+    await RoleMenu.destroy({ where: { role_id: role.id } });
   if (menus && Array.isArray(menus)) {
     // 准备批量插入数据
     const menuPermissions = menus.map((menu) => ({
@@ -146,7 +150,8 @@ router.delete('/roles/:id', checkMenuPermission('角色管理','can_delete'), ca
 
   const roleName = role.name;
   const roleDescription = role.description;
-  await role.destroy();
+  const { Role } = require('../models');
+    await role.destroy();
 
   // 记录操作日志
   await SimpleLogger.logOperation(

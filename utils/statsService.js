@@ -1,6 +1,10 @@
 // utils/statsService.js - 实时统计服务
-const { Blog } = require('../models/blog');
-const { sequelize } = require('../models');
+// 动态导入模型以避免循环依赖
+const getModels = () => {
+  const { Blog } = require('../models');
+  const { sequelize } = require('../models');
+  return { Blog, sequelize };
+};
 const wsManager = require('./websocket');
 
 class StatsService {
@@ -38,6 +42,7 @@ class StatsService {
   // 更新统计数据
   async updateStats() {
     try {
+      const { Blog, sequelize } = getModels();
       // 获取博客总数和总访问量
       const blogStats = await Blog.findOne({
         attributes: [
@@ -61,6 +66,7 @@ class StatsService {
   // 手动触发博客访问量更新
   async updateBlogView(blogId) {
     try {
+      const { Blog } = getModels();
       const blog = await Blog.findByPk(blogId, {
         attributes: ['id', 'views']
       });
@@ -83,6 +89,7 @@ class StatsService {
   // 获取当前统计数据
   async getCurrentStats() {
     try {
+      const { Blog, sequelize } = getModels();
       const blogStats = await Blog.findOne({
         attributes: [
           [sequelize.fn('COUNT', sequelize.col('id')), 'totalBlogs'],

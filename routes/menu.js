@@ -14,7 +14,8 @@ router.use(authenticate);
 
 // 获取所有菜单
 router.get('/', checkMenuPermission('菜单管理','can_read'), catchAsync(async (req, res) => {
-  const menus = await Menu.findAll({
+  const { Menu } = require('../models');
+    const menus = await Menu.findAll({
     order: [['order', 'ASC']]
   });
   success(res, menus, '获取菜单成功');
@@ -22,7 +23,8 @@ router.get('/', checkMenuPermission('菜单管理','can_read'), catchAsync(async
 
 // 新建菜单
 router.post('/', checkMenuPermission('菜单管理','can_create'), catchAsync(async (req, res) => {
-  const menu = await Menu.create(req.body);
+  const { Menu } = require('../models');
+    const menu = await Menu.create(req.body);
 
   // 记录操作日志
   await SimpleLogger.logOperation(
@@ -44,7 +46,8 @@ router.post('/', checkMenuPermission('菜单管理','can_create'), catchAsync(as
 
 // 更新菜单
 router.put('/:id', checkMenuPermission('菜单管理','can_update'), catchAsync(async (req, res) => {
-  const menu = await Menu.findByPk(req.params.id);
+  const { Menu } = require('../models');
+    const menu = await Menu.findByPk(req.params.id);
   if (!menu) return fail(res, '菜单不存在', 404);
 
   const oldName = menu.name;
@@ -80,7 +83,8 @@ router.delete('/:id', checkMenuPermission('菜单管理','can_delete'), catchAsy
 
   const menuName = menu.name;
   const menuPath = menu.path;
-  await menu.destroy();
+  const { Menu } = require('../models');
+    await menu.destroy();
 
   // 记录操作日志
   await SimpleLogger.logOperation(
@@ -101,7 +105,8 @@ router.delete('/:id', checkMenuPermission('菜单管理','can_delete'), catchAsy
 
 // 获取角色的菜单
 router.get('/role/:roleId', checkMenuPermission('菜单管理','can_read'), catchAsync(async (req, res) => {
-  const role = await Role.findByPk(req.params.roleId, {
+  const { Role } = require('../models');
+    const role = await Role.findByPk(req.params.roleId, {
     include: [{ model: Menu }]
   });
   if (!role) return fail(res, '角色不存在', 404);
