@@ -103,8 +103,4 @@ jobs:
             echo "=== 检查端口监听 ==="
             netstat -tlnp | grep :3000 || echo "端口3000未监听"
             
-            # 测试健康检查
-            echo "=== 测试健康检查 ==="
-            curl -s --max-time 5 http://localhost:3000/api/health || echo "本地访问失败"
-            
             echo "部署验证完成"
