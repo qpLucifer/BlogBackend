@@ -52,8 +52,15 @@
 ## 验证设置
 
 设置完成后，推送代码到main分支，GitHub Actions会自动：
-1. 使用这些secrets创建动态的 `ecosystem.config.js` 文件
-2. 部署应用到服务器
-3. 启动PM2服务
+1. 使用这些secrets创建动态的 `start-with-env.js` 文件（包含所有环境变量）
+2. 创建简化的 `ecosystem.config.js` 文件
+3. 部署应用到服务器
+4. 启动PM2服务
 
 你可以在Actions标签页中查看部署日志，确认环境变量是否正确设置。
+
+## 工作原理
+
+- **项目中的 `start-with-env.js`**：只包含环境变量检查逻辑，不包含敏感信息
+- **服务器上的 `start-with-env.js`**：在部署时动态生成，包含从GitHub Secrets读取的所有环境变量
+- **安全性**：敏感信息只存在于GitHub Secrets中，不会出现在代码仓库里

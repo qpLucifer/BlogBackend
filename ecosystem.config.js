@@ -6,11 +6,6 @@ module.exports = {
     autorestart: true,
     watch: false,
     max_memory_restart: '1G',
-    env: {
-      NODE_ENV: 'production',
-      DB_DIALECT: 'mysql',
-      JWT_EXPIRES_IN: '1d',
-    },
     error_file: './logs/err.log',
     out_file: './logs/out.log',
     log_file: './logs/combined.log',
