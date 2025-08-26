@@ -60,13 +60,6 @@ jobs:
             process.env.JWT_EXPIRES_IN = '${{ secrets.JWT_EXPIRES_IN }}';
             process.env.CORS_ORIGIN = '${{ secrets.CORS_ORIGIN }}';
             
-            console.log('🚀 使用环境变量启动应用...');
-            console.log('NODE_ENV:', process.env.NODE_ENV);
-            console.log('DB_HOST:', process.env.DB_HOST);
-            console.log('DB_NAME:', process.env.DB_NAME);
-            console.log('PORT:', process.env.PORT);
-            console.log('CORS_ORIGIN:', process.env.CORS_ORIGIN);
-            
             // 启动应用
             require('./bin/www');
             EOF
@@ -145,7 +138,7 @@ jobs:
             
             # 检查环境变量
             echo "🔍 检查环境变量:"
-            pm2 env blog-backend
+            pm2 env 0
             
             # 如果启动失败，尝试备用方式
             if ! pm2 list | grep -q "blog-backend.*online"; then
