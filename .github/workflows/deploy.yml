@@ -75,14 +75,42 @@ jobs:
             # 清理PM2进程列表
             pm2 kill
             
-            # 使用ecosystem配置文件启动服务
-            pm2 start ecosystem.config.js
+            # 检查ecosystem配置文件是否存在
+            if [ ! -f "ecosystem.config.js" ]; then
+              echo "❌ ecosystem.config.js 文件不存在"
+              exit 1
+            fi
             
-            # 保存PM2配置
-            pm2 save
+            # 显示配置文件内容（调试用）
+            echo "📄 ecosystem.config.js 内容:"
+            cat ecosystem.config.js
+            
+            
+            # 使用ecosystem配置文件启动服务
+            pm2 start ecosystem.config.js --env production
+            
+            # 等待几秒让应用启动
+            sleep 5
             
             # 显示PM2状态
             pm2 status
+            
+            # 显示应用日志
+            echo "📋 应用日志:"
+            pm2 logs blog-backend --lines 20
+            
+            # 检查环境变量
+            echo "🔍 检查环境变量:"
+            pm2 env blog-backend
+            
+            # 如果启动失败，尝试备用方式
+            if ! pm2 list | grep -q "blog-backend.*online"; then
+              echo "⚠️ PM2启动失败，尝试备用启动方式..."
+              pm2 kill
+              pm2 start start-with-env.js --name blog-backend
+              sleep 3
+              pm2 status
+            fi
             
             echo "PM2服务重启完成"
             echo "部署验证完成"

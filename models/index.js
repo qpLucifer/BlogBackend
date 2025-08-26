@@ -8,7 +8,11 @@ const port = process.env.DB_PORT || '3306';
 const database = process.env.DB_NAME || 'blogDb';
 const username = process.env.DB_USER || 'root';
 const password = process.env.DB_PASSWORD || '';
-console.log("process.env.NODE_ENV", process.env.NODE_ENV)
+console.log("🔍 环境变量检查:");
+console.log("  - NODE_ENV:", process.env.NODE_ENV);
+console.log("  - DB_HOST:", process.env.DB_HOST);
+console.log("  - DB_NAME:", process.env.DB_NAME);
+console.log("  - PORT:", process.env.PORT);
 const sequelize = new Sequelize(database, username, password, {
   host: host,
   port: port,
