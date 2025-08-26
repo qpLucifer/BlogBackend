@@ -17,7 +17,7 @@ module.exports = {
       PORT: 3000,
       JWT_SECRET: 'money_roc_secret_key',
       JWT_EXPIRES_IN: '1d',
-      CORS_ORIGIN: 'https://www.jiayizhou.top:3002'
+      CORS_ORIGIN: 'https://www.jiayizhou.top:3001'
     },
     env_production: {
       NODE_ENV: 'production',
@@ -30,7 +30,7 @@ module.exports = {
       PORT: 3000,
       JWT_SECRET: 'money_roc_secret_key',
       JWT_EXPIRES_IN: '1d',
-      CORS_ORIGIN: 'https://www.jiayizhou.top:3002'
+      CORS_ORIGIN: 'https://www.jiayizhou.top:3001'
     },
     error_file: './logs/err.log',
     out_file: './logs/out.log',

@@ -13,6 +13,8 @@ console.log("  - NODE_ENV:", process.env.NODE_ENV);
 console.log("  - DB_HOST:", process.env.DB_HOST);
 console.log("  - DB_NAME:", process.env.DB_NAME);
 console.log("  - PORT:", process.env.PORT);
+console.log("  - CORS_ORIGIN:", process.env.CORS_ORIGIN);
+
 const sequelize = new Sequelize(database, username, password, {
   host: host,
   port: port,

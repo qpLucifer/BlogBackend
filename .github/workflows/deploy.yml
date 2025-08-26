@@ -95,19 +95,15 @@ jobs:
             # 显示PM2状态
             pm2 status
             
-            # 显示应用日志
-            echo "📋 应用日志:"
-            pm2 logs blog-backend --lines 20
-            
             # 检查环境变量
             echo "🔍 检查环境变量:"
-            pm2 env blog-backend
+            pm2 env blog
             
             # 如果启动失败，尝试备用方式
-            if ! pm2 list | grep -q "blog-backend.*online"; then
+            if ! pm2 list | grep -q "blog.*online"; then
               echo "⚠️ PM2启动失败，尝试备用启动方式..."
               pm2 kill
-              pm2 start start-with-env.js --name blog-backend
+              pm2 start start-with-env.js --name blog
               sleep 3
               pm2 status
             fi
