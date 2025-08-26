@@ -103,6 +103,8 @@ router.get('/stats',
   checkMenuPermission('日志管理', 'can_read'),
   catchAsync(async (req, res) => {
     try {
+         // 动态导入模型以避免循环依赖
+    const { UserLog } = require('../models');
       // 获取今日日志数量
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -185,6 +187,8 @@ router.delete('/clean',
     const { days = 30 } = req.body;
 
     try {
+      // 动态导入模型以避免循环依赖
+    const { UserLog } = require('../models');
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
 
@@ -207,6 +211,7 @@ router.delete('/clean',
 router.get('/export',
   checkMenuPermission('日志管理', 'can_read'),
   catchAsync(async (req, res) => {
+    const { UserLog } = require('../models');
     const {
       username,
       action,
@@ -292,6 +297,7 @@ router.post('/mark-read',
     const { logId } = req.body;
 
     try {
+      const { UserLog } = require('../models');
       const log = await UserLog.findByPk(logId);
       if (!log) {
         throw new Error('日志不存在');
@@ -323,6 +329,7 @@ router.post('/mark-read',
 router.get('/failed-stats',
   checkMenuPermission('日志管理', 'can_read'),
   catchAsync(async (req, res) => {
+    const { UserLog } = require('../models');
     // 总失败数
     const totalFailed = await UserLog.count({ where: { status: 'failed' } });
     // 未读失败数
@@ -346,6 +353,7 @@ router.get('/failed-stats',
 router.post('/mark-read-failed',
   checkMenuPermission('日志管理', 'can_read'),
   catchAsync(async (req, res) => {
+    const { UserLog } = require('../models');
     // 标记所有失败且未读的日志为已读
     const [affectedRows] = await UserLog.update(
       { hasRead: true },
