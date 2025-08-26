@@ -155,7 +155,7 @@ router.get('/export', checkMenuPermission('博客管理','can_read'), catchAsync
 // 获取单篇博客
 router.get('/:id', checkMenuPermission('博客管理','can_read'), catchAsync(async (req, res) => {
   const { Blog } = require('../models');
-    const blog = await Blog.findByPk(req.params.id, {
+  const blog = await Blog.findByPk(req.params.id, {
     include: [{ model: Tag, as: 'tags', through: { attributes: [] } }]
   });
   if (!blog) {

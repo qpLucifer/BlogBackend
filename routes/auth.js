@@ -5,7 +5,6 @@ const { registerUser, loginUser } = require('../utils/auth');
 const { success, fail } = require('../utils/response');
 
 // 导入验证和安全中间件
-const { userValidation } = require('../utils/validation');
 const SimpleLogger = require('../utils/logger');
 const { catchAsync } = require('../middleware/errorHandler');
 const { loginLimiter } = require('../middleware/security');

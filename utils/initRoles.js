@@ -1,9 +1,9 @@
 // utils/initRoles.js - 初始化角色和权限
-module.exports = async function() {
+module.exports = async function () {
   // 动态导入模型以避免循环依赖
   const { Role, Menu } = require('../models');
   const { registerUser } = require('./auth');
-  
+
   // 菜单配置常量
   const MENU_CONFIG = [
     { name: '首页', path: '/dashboard', icon: 'HomeOutlined', order: 1 },
@@ -34,12 +34,12 @@ module.exports = async function() {
     { username: 'editor', password: '123456', email: 'editor@example.com', roles: ['editor'] },
     { username: 'user', password: '123456', email: 'user@example.com', roles: ['user'] }
   ];
-  
+
   try {
     // 检查是否已初始化
     const adminInit = await Role.findOne({ where: { name: 'admin' } });
     if (adminInit) return;
-    
+
     // 创建角色
     const roles = {};
     for (const roleConfig of ROLE_CONFIG) {
@@ -79,7 +79,7 @@ module.exports = async function() {
     await menusMenu.update({ parent_id: systemMenu.id });
     await usersMenu.update({ parent_id: systemMenu.id });
     await rolesMenu.update({ parent_id: systemMenu.id });
-  await systemSettingsMenu.update({ parent_id: systemMenu.id });
+    await systemSettingsMenu.update({ parent_id: systemMenu.id });
 
     // 分配菜单给admin角色,并分配权限
     await roles.admin.setMenus(menus, {
@@ -92,7 +92,7 @@ module.exports = async function() {
     });
 
     // 分配部分菜单给editor角色
-    const editorMenus = menus.filter(menu => 
+    const editorMenus = menus.filter(menu =>
       ['博客管理', '评论管理', '标签管理', '每日一句'].includes(menu.name)
     );
     await roles.editor.setMenus(editorMenus, {
@@ -105,7 +105,7 @@ module.exports = async function() {
     });
 
     // 分配只读菜单给user角色
-    const userMenus = menus.filter(menu => 
+    const userMenus = menus.filter(menu =>
       ['首页', '博客管理', '评论管理', '标签管理'].includes(menu.name)
     );
     await roles.user.setMenus(userMenus, {

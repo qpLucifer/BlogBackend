@@ -3,7 +3,6 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkPermission, checkRole, checkMenuPermission } = require('../middleware/permissions');
-const { Role, Menu, RoleMenu} = require('../models/admin');
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
 const { catchAsync } = require('../middleware/errorHandler');
@@ -15,14 +14,15 @@ router.use(authenticate);
 // 获取所有角色
 router.get('/listAll', catchAsync(async (req, res) => {
   const { Role } = require('../models');
-    const roles = await Role.findAll({
+  const roles = await Role.findAll({
     attributes: ['id', 'name'],
   });
   success(res, roles, '获取角色列表成功');
 }));
 
 // 分页获取所有角色
-router.get('/listPage', checkMenuPermission('角色管理','can_read'), catchAsync(async (req, res) => {
+router.get('/listPage', checkMenuPermission('角色管理', 'can_read'), catchAsync(async (req, res) => {
+  const { Role, Menu } = require('../models');
   const { name, pageSize = 10, currentPage = 1 } = req.query;
 
   // 构建查询条件
@@ -56,10 +56,10 @@ router.get('/listPage', checkMenuPermission('角色管理','can_read'), catchAsy
 }));
 
 // 创建角色
-router.post('/roles', checkMenuPermission('角色管理','can_create'), catchAsync(async (req, res) => {
+router.post('/roles', checkMenuPermission('角色管理', 'can_create'), catchAsync(async (req, res) => {
   const { name, description, menus } = req.body;
   const { Role } = require('../models');
-    const role = await Role.create({ name, description });
+  const role = await Role.create({ name, description });
   if (menus && Array.isArray(menus)) {
     // 准备批量插入数据
     const menuPermissions = menus.map((menu) => ({
@@ -90,10 +90,10 @@ router.post('/roles', checkMenuPermission('角色管理','can_create'), catchAsy
 }));
 
 // 更新角色
-router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catchAsync(async (req, res) => {
+router.put('/roles/:id', checkMenuPermission('角色管理', 'can_update'), catchAsync(async (req, res) => {
   const { name, description, menus } = req.body;
   const { Role } = require('../models');
-    const role = await Role.findByPk(req.params.id);
+  const role = await Role.findByPk(req.params.id);
   if (!role) {
     return fail(res, '角色不存在', 404);
   }
@@ -104,7 +104,7 @@ router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catch
   await role.update({ name, description });
   // 删除所有现有关联
   const { RoleMenu } = require('../models');
-    await RoleMenu.destroy({ where: { role_id: role.id } });
+  await RoleMenu.destroy({ where: { role_id: role.id } });
   if (menus && Array.isArray(menus)) {
     // 准备批量插入数据
     const menuPermissions = menus.map((menu) => ({
@@ -142,7 +142,8 @@ router.put('/roles/:id', checkMenuPermission('角色管理','can_update'), catch
 }));
 
 // 删除角色
-router.delete('/roles/:id', checkMenuPermission('角色管理','can_delete'), catchAsync(async (req, res) => {
+router.delete('/roles/:id', checkMenuPermission('角色管理', 'can_delete'), catchAsync(async (req, res) => {
+  const { Role } = require('../models');
   const role = await Role.findByPk(req.params.id);
   if (!role) {
     return fail(res, '角色不存在', 404);
@@ -150,8 +151,7 @@ router.delete('/roles/:id', checkMenuPermission('角色管理','can_delete'), ca
 
   const roleName = role.name;
   const roleDescription = role.description;
-  const { Role } = require('../models');
-    await role.destroy();
+  await role.destroy();
 
   // 记录操作日志
   await SimpleLogger.logOperation(
@@ -171,7 +171,8 @@ router.delete('/roles/:id', checkMenuPermission('角色管理','can_delete'), ca
 }));
 
 // 导出角色
-router.get('/export', checkMenuPermission('角色管理','can_read'), catchAsync(async (req, res) => {
+router.get('/export', checkMenuPermission('角色管理', 'can_read'), catchAsync(async (req, res) => {
+  const { Role, Menu } = require('../models');
   const { name } = req.query;
 
   // 构建查询条件

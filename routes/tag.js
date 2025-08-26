@@ -14,14 +14,14 @@ router.use(authenticate);
 // 获取所有标签列表
 router.get('/listAll', catchAsync(async (req, res) => {
   const { Tag } = require('../models');
-    const tags = await Tag.findAll({
+  const tags = await Tag.findAll({
     attributes: ['id', 'name'],
   });
   success(res, tags, '获取标签列表成功');
 }));
 
 // 分页获取所有标签
-router.get('/listPage', checkMenuPermission('标签管理','can_read'), catchAsync(async (req, res) => {
+router.get('/listPage', checkMenuPermission('标签管理', 'can_read'), catchAsync(async (req, res) => {
   const { Tag } = require('../models');
   const { name, pageSize, currentPage } = req.query;
   // 获取总数
@@ -38,20 +38,20 @@ router.get('/listPage', checkMenuPermission('标签管理','can_read'), catchAsy
         [Op.like]: `%${name}%`
       }
     },
-    limit: pageSize*1,
-    offset: (currentPage*1 - 1) * pageSize*1,
+    limit: pageSize * 1,
+    offset: (currentPage * 1 - 1) * pageSize * 1,
   });
   success(res, {
     list: tags,
     total: total,
-    pageSize: pageSize*1,
-    currentPage: currentPage*1,
+    pageSize: pageSize * 1,
+    currentPage: currentPage * 1,
   }, '获取标签列表成功');
 }));
 
 // 新增标签
 router.post('/add',
-  checkMenuPermission('标签管理','can_create'),
+  checkMenuPermission('标签管理', 'can_create'),
   (req, res, next) => {
     const { validateBody, tagValidation } = require('../utils/validation');
     return validateBody(tagValidation.create)(req, res, next);
@@ -60,7 +60,7 @@ router.post('/add',
     const { name } = req.body;
     try {
       const { Tag } = require('../models');
-    const tag = await Tag.create({ name });
+      const tag = await Tag.create({ name });
 
       // 记录操作日志
       await SimpleLogger.logOperation(
@@ -107,7 +107,7 @@ router.post('/add',
 
 // 更新标签
 router.put('/update/:id',
-  checkMenuPermission('标签管理','can_update'),
+  checkMenuPermission('标签管理', 'can_update'),
   (req, res, next) => {
     const { validateBody, tagValidation } = require('../utils/validation');
     return validateBody(tagValidation.update)(req, res, next);
@@ -142,15 +142,15 @@ router.put('/update/:id',
 );
 
 // 删除标签
-router.delete('/delete/:id', checkMenuPermission('标签管理','can_delete'), catchAsync(async (req, res) => {
+router.delete('/delete/:id', checkMenuPermission('标签管理', 'can_delete'), catchAsync(async (req, res) => {
+  const { Tag } = require('../models');
   const tag = await Tag.findByPk(req.params.id);
   if (!tag) {
     return fail(res, '标签不存在', 404);
   }
 
   const tagName = tag.name;
-  const { Tag } = require('../models');
-    await tag.destroy();
+  await tag.destroy();
 
   // 记录操作日志
   await SimpleLogger.logOperation(
@@ -170,10 +170,11 @@ router.delete('/delete/:id', checkMenuPermission('标签管理','can_delete'), c
 }));
 
 // 导出标签
-router.get('/export', checkMenuPermission('标签管理','can_read'), async (req, res) => {
+router.get('/export', checkMenuPermission('标签管理', 'can_read'), async (req, res) => {
   try {
+    const { Tag } = require('../models');
     const { name } = req.query;
-    
+
     // 构建查询条件
     const whereConditions = {};
     if (name) {
@@ -195,7 +196,7 @@ router.get('/export', checkMenuPermission('标签管理','can_read'), async (req
     // 构建Excel数据
     const XLSX = require('xlsx');
     const workbook = XLSX.utils.book_new();
-    
+
     const worksheetData = [
       ['ID', '标签名', '创建时间'], // 表头
       ...tags.map(tag => [

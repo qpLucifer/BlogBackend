@@ -3,7 +3,6 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/auth');
 const { checkPermission, checkRole, checkMenuPermission } = require('../middleware/permissions');
-const { User, Role, Menu, RoleMenu} = require('../models/admin');
 const { hashPassword } = require('../utils/auth');
 const { success, fail } = require('../utils/response');
 const { Op } = require('sequelize');
@@ -18,7 +17,7 @@ router.use(authenticate);
 // 获取所有用户
 router.get('/listAll', catchAsync(async (req, res) => {
   const { User } = require('../models');
-    const users = await User.findAll({
+  const users = await User.findAll({
     attributes: ['id', 'username'],
   });
 
@@ -26,7 +25,8 @@ router.get('/listAll', catchAsync(async (req, res) => {
 }));
 
 // 获取所有用户
-router.get('/listPage',checkMenuPermission('用户管理','can_read'), catchAsync(async (req, res) => {
+router.get('/listPage', checkMenuPermission('用户管理', 'can_read'), catchAsync(async (req, res) => {
+  const { User, Role } = require('../models');
   const { username, email, is_active, pageSize = 10, currentPage = 1 } = req.query;
 
   // 构建查询条件
@@ -51,7 +51,7 @@ router.get('/listPage',checkMenuPermission('用户管理','can_read'), catchAsyn
       model: Role,
       attributes: ['id', 'name'],
       through: { attributes: [] },
-      as:"roles"
+      as: "roles"
     }],
     where: whereConditions,
     limit: parseInt(pageSize),
@@ -69,7 +69,7 @@ router.get('/listPage',checkMenuPermission('用户管理','can_read'), catchAsyn
 
 // 新增用户
 router.post('/users',
-  checkMenuPermission('用户管理','can_create'),
+  checkMenuPermission('用户管理', 'can_create'),
   (req, res, next) => {
     const { register } = require('../utils/validation').userValidation();
     const { validateBody } = require('../utils/validation');
@@ -105,7 +105,7 @@ router.post('/users',
 
 // 更新用户
 router.put('/users/:id',
-  checkMenuPermission('用户管理','can_update'),
+  checkMenuPermission('用户管理', 'can_update'),
   (req, res, next) => {
     const { update } = require('../utils/validation').userValidation();
     const { validateBody } = require('../utils/validation');
@@ -145,7 +145,8 @@ router.put('/users/:id',
 );
 
 // 更新用户个人信息
-router.put('/users/:id/profile',checkMenuPermission('用户管理','can_update'), catchAsync(async (req, res) => {
+router.put('/users/:id/profile', checkMenuPermission('用户管理', 'can_update'), catchAsync(async (req, res) => {
+  const { User } = require('../models');
   const { mood, signature } = req.body;
   const user = await User.findByPk(req.params.id);
   if (!user) {
@@ -156,15 +157,15 @@ router.put('/users/:id/profile',checkMenuPermission('用户管理','can_update')
 }));
 
 // 删除用户
-router.delete('/users/:id',checkMenuPermission('用户管理','can_delete'), catchAsync(async (req, res) => {
+router.delete('/users/:id', checkMenuPermission('用户管理', 'can_delete'), catchAsync(async (req, res) => {
+  const { User } = require('../models');
   const user = await User.findByPk(req.params.id);
   if (!user) {
     return fail(res, '用户不存在', 404);
   }
 
   const username = user.username;
-  const { User } = require('../models');
-    await user.destroy();
+  await user.destroy();
 
   // 记录操作日志
   await SimpleLogger.logOperation(
@@ -185,7 +186,8 @@ router.delete('/users/:id',checkMenuPermission('用户管理','can_delete'), cat
 }));
 
 // 导出用户
-router.get('/export', checkMenuPermission('用户管理','can_read'), catchAsync(async (req, res) => {
+router.get('/export', checkMenuPermission('用户管理', 'can_read'), catchAsync(async (req, res) => {
+  const { User, Role } = require('../models');
   const { username, email, is_active } = req.query;
 
   // 构建查询条件

@@ -40,10 +40,43 @@ jobs:
           script: |
             cd ${{ secrets.TARGET_DIR }}
             
-            # 删除旧的.env文件，使用PM2配置文件管理环境变量
+            # 删除旧的.env文件
             rm -f .env
             
-            echo "环境配置完成，将使用PM2配置文件管理环境变量"
+            # 创建动态的ecosystem.config.js文件
+            cat > ecosystem.config.js << 'EOF'
+            module.exports = {
+              apps: [{
+                name: 'blog-backend',
+                script: './start-with-env.js',
+                instances: 1,
+                autorestart: true,
+                watch: false,
+                max_memory_restart: '1G',
+                env: {
+                  NODE_ENV: 'production',
+                  DB_DIALECT: 'mysql',
+                  DB_HOST: '${{ secrets.DB_HOST }}',
+                  DB_PORT: ${{ secrets.DB_PORT }},
+                  DB_NAME: '${{ secrets.DB_NAME }}',
+                  DB_USER: '${{ secrets.DB_USER }}',
+                  DB_PASSWORD: '${{ secrets.DB_PASSWORD }}',
+                  PORT: ${{ secrets.PORT }},
+                  JWT_SECRET: '${{ secrets.JWT_SECRET }}',
+                  JWT_EXPIRES_IN: '${{ secrets.JWT_EXPIRES_IN }}',
+                  CORS_ORIGIN: '${{ secrets.CORS_ORIGIN }}'
+                },
+                error_file: './logs/err.log',
+                out_file: './logs/out.log',
+                log_file: './logs/combined.log',
+                time: true
+              }]
+            };
+            EOF
+            
+            echo "✅ 动态创建ecosystem.config.js完成"
+            echo "📄 ecosystem.config.js 内容:"
+            cat ecosystem.config.js
 
       - name: Install production dependencies
         uses: appleboy/ssh-action@v1.0.3
@@ -56,8 +89,6 @@ jobs:
             echo "开始安装生产依赖..."
             npm install
             echo "依赖安装完成"
-
-
 
       - name: Restart PM2 service
         uses: appleboy/ssh-action@v1.0.3
@@ -85,7 +116,6 @@ jobs:
             echo "📄 ecosystem.config.js 内容:"
             cat ecosystem.config.js
             
-            
             # 使用ecosystem配置文件启动服务
             pm2 start ecosystem.config.js --env production
             
@@ -97,13 +127,13 @@ jobs:
             
             # 检查环境变量
             echo "🔍 检查环境变量:"
-            pm2 env blog
+            pm2 env blog-backend
             
             # 如果启动失败，尝试备用方式
-            if ! pm2 list | grep -q "blog.*online"; then
+            if ! pm2 list | grep -q "blog-backend.*online"; then
               echo "⚠️ PM2启动失败，尝试备用启动方式..."
               pm2 kill
-              pm2 start start-with-env.js --name blog
+              pm2 start start-with-env.js --name blog-backend
               sleep 3
               pm2 status
             fi
