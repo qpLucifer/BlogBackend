@@ -82,7 +82,7 @@ const blogValidation = {
     title: Joi.string().min(1).max(200),
     content: Joi.string().min(1),
     summary: Joi.string().max(500).allow(''),
-    cover_image: Joi.string().uri().allow(''),
+    // cover_image: Joi.string().uri().allow(''),
     tags: Joi.array().items(Joi.number().integer().positive()),
     is_published: Joi.boolean(),
     is_choice: Joi.boolean(),

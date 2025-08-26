@@ -58,7 +58,7 @@ router.get('/listPage', checkMenuPermission('角色管理', 'can_read'), catchAs
 // 创建角色
 router.post('/roles', checkMenuPermission('角色管理', 'can_create'), catchAsync(async (req, res) => {
   const { name, description, menus } = req.body;
-  const { Role } = require('../models');
+  const { Role, RoleMenu } = require('../models');
   const role = await Role.create({ name, description });
   if (menus && Array.isArray(menus)) {
     // 准备批量插入数据

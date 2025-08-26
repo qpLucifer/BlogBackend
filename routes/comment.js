@@ -199,6 +199,7 @@ router.delete('/delete/:id',
   },
   checkMenuPermission('评论管理','can_delete'),
   catchAsync(async (req, res) => {
+    const { Comment } = require('../models');
     const comment = await Comment.findByPk(req.params.id);
     if (!comment) {
       return fail(res, '评论不存在', 404);
@@ -210,7 +211,6 @@ router.delete('/delete/:id',
       content: comment.content
     };
 
-    const { Comment } = require('../models');
     await comment.destroy();
 
     // 记录操作日志

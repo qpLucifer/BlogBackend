@@ -91,6 +91,7 @@ router.post('/add', checkMenuPermission('每日一句','can_create'), catchAsync
 
 // 更新每日一句
 router.put('/update/:id', checkMenuPermission('每日一句','can_update'), catchAsync(async (req, res) => {
+    const { BlogSentence } = require('../models');
     const { day_sentence, auth } = req.body;
     const { id } = req.params;
     if (!id) {
@@ -131,6 +132,7 @@ router.put('/update/:id', checkMenuPermission('每日一句','can_update'), catc
 
 // 删除每日一句
 router.delete('/delete/:id', checkMenuPermission('每日一句','can_delete'), catchAsync(async (req, res) => {
+    const { BlogSentence } = require('../models');
     const { id } = req.params;
     if (!id) {
         return fail(res, 'ID是必填项', 400);

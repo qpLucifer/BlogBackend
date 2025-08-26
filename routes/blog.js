@@ -13,9 +13,6 @@ const getModels = () => {
   return { Blog, Tag, BlogTag, Comment, User };
 };
 const SimpleLogger = require('../utils/logger');
-
-// 导入验证和性能监控
-const { blogValidation, paginationValidation } = require('../utils/validation');
 const { catchAsync } = require('../middleware/errorHandler');
 
 // 需要认证
@@ -154,7 +151,7 @@ router.get('/export', checkMenuPermission('博客管理','can_read'), catchAsync
 
 // 获取单篇博客
 router.get('/:id', checkMenuPermission('博客管理','can_read'), catchAsync(async (req, res) => {
-  const { Blog } = require('../models');
+  const { Blog, Tag } = require('../models');
   const blog = await Blog.findByPk(req.params.id, {
     include: [{ model: Tag, as: 'tags', through: { attributes: [] } }]
   });
@@ -214,6 +211,7 @@ router.put('/update/:id',
     return validateBody(blogValidation.update)(req, res, next);
   },
   catchAsync(async (req, res) => {
+    const { Blog } = require('../models');
     const { title, cover_image, content, summary, author_id, tags, is_published, is_choice, need_time } = req.body;
 
     const blog = await Blog.findByPk(req.params.id);
@@ -224,7 +222,6 @@ router.put('/update/:id',
     const oldTitle = blog.title;
     const oldPublished = blog.is_published;
 
-    const { Blog } = require('../models');
     await blog.update({ title, cover_image, content, summary, author_id, is_published, is_choice, need_time });
     if (tags) {
       await blog.setTags(tags);
