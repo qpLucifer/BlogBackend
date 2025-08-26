@@ -9,8 +9,7 @@ module.exports = {
     env: {
       NODE_ENV: 'production',
       DB_DIALECT: 'mysql',
-      DB_PORT: 3306,
-      JWT_EXPIRES_IN: '1d'
+      JWT_EXPIRES_IN: '1d',
     },
     error_file: './logs/err.log',
     out_file: './logs/out.log',
