@@ -1,6 +1,12 @@
 // utils/websocket.js - WebSocket服务管理
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const getModels = () => {
+  const { Blog } = require('../models');
+  const { sequelize } = require('../models');
+  return { Blog, sequelize };
+};
+const statsService = require('./statsService');
 class WebSocketManager {
   constructor() {
     this.io = null;
@@ -79,18 +85,7 @@ class WebSocketManager {
 
         // 更新在线用户数
         this.updateOnlineUsers();
-        // 动态导入模型以避免循环依赖
-        const { UserLog } = require('../models');
-        const errorLogDataNum = await UserLog.count({
-          where: {
-            // log_type: 'error',
-            status: 'failed',
-            hasRead: false
-          }
-        });
-        // 更新错误日志数量
-        this.updateErrorLogs(errorLogDataNum);
-
+        statsService.updateStats(this);
         // 发送当前统计数据
         socket.emit('stats:update', this.stats);
       });

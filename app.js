@@ -152,9 +152,9 @@ const initDatabase = async () => {
 initDatabase().catch(logger.error);
 
 // 启动统计服务
-const statsService = require('./utils/statsService');
-setTimeout(() => {
-  statsService.start();
-}, 5000); // 延迟5秒启动，确保数据库连接已建立
+// const statsService = require('./utils/statsService');
+// setTimeout(() => {
+//   statsService.start();
+// }, 5000); // 延迟5秒启动，确保数据库连接已建立
 
 module.exports = app;

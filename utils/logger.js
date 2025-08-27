@@ -64,8 +64,8 @@ class SimpleLogger {
       if (status === 'error' || logType === 'error') {
         const errorLogDataNum = await UserLog.count({
           where: {
-            log_type: 'error',
-            status: 'failed'
+            status: 'failed',
+            hasRead: false
           }
         });
         wsManager.pushErrorLog(errorLogDataNum);

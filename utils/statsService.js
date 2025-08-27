@@ -3,7 +3,8 @@
 const getModels = () => {
   const { Blog } = require('../models');
   const { sequelize } = require('../models');
-  return { Blog, sequelize };
+  const { UserLog } = require('../models');
+  return { Blog, sequelize, UserLog };
 };
 const wsManager = require('./websocket');
 
@@ -16,33 +17,33 @@ class StatsService {
   // 启动统计服务
   start() {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     console.log('📊 实时统计服务已启动');
-    
+
     // 立即更新一次
-    this.updateStats();
-    
+    // this.updateStats();
+
     // 每30秒更新一次统计数据
     // this.updateInterval = setInterval(() => {
     //   this.updateStats();
     // }, 30000);
   }
 
-  // 停止统计服务
-  stop() {
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-      this.updateInterval = null;
-    }
-    this.isRunning = false;
-    console.log('📊 实时统计服务已停止');
-  }
+  // // 停止统计服务
+  // stop() {
+  //   if (this.updateInterval) {
+  //     clearInterval(this.updateInterval);
+  //     this.updateInterval = null;
+  //   }
+  //   this.isRunning = false;
+  //   console.log('📊 实时统计服务已停止');
+  // }
 
   // 更新统计数据
-  async updateStats() {
+  async updateStats(wsManager) {
     try {
-      const { Blog, sequelize } = getModels();
+      const { Blog, sequelize, UserLog } = getModels();
       // 获取博客总数和总访问量
       const blogStats = await Blog.findOne({
         attributes: [
@@ -57,7 +58,17 @@ class StatsService {
 
       // 通过WebSocket推送更新
       wsManager.updateBlogStats(totalBlogs, totalViews);
-      
+
+      const errorLogDataNum = await UserLog.count({
+        where: {
+          // log_type: 'error',
+          status: 'failed',
+          hasRead: false
+        }
+      });
+      // 更新错误日志数量
+      wsManager.updateErrorLogs(errorLogDataNum);
+
     } catch (error) {
       console.error('更新统计数据失败:', error);
     }
@@ -74,10 +85,10 @@ class StatsService {
       if (blog) {
         // 增加访问量
         await blog.increment('views');
-        
+
         // 推送单个博客访问量更新
         wsManager.pushBlogView(blogId, blog.views + 1);
-        
+
         // 触发整体统计更新
         this.updateStats();
       }
