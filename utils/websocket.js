@@ -121,16 +121,6 @@ class WebSocketManager {
     }
   }
 
-  // 推送错误日志
-  pushErrorLog(errorLogDataNum) {
-    this.broadcast('log:error', errorLogDataNum);
-  }
-
-  // 推送错误日志数量减少通知
-  pushErrorLogDecrease(errorLogDataNum) {
-    this.broadcast('log:errorDecrease', errorLogDataNum);
-  }
-
   // 更新博客统计
   updateBlogStats(totalBlogs, totalViews) {
     this.stats.totalBlogs = totalBlogs;
@@ -143,12 +133,22 @@ class WebSocketManager {
 
   // 推送博客访问量更新
   pushBlogView(blogId, newViewCount) {
+    this.stats.totalViews = newViewCount;
     this.broadcast('blog:viewUpdate', {
       blogId,
       viewCount: newViewCount,
       timestamp: new Date().toISOString()
     });
   }
+
+  // 推送博客数量更新
+  pushBlogTotal(totalBlogs) {
+    this.stats.totalBlogs = totalBlogs;
+    this.broadcast('stats:blogsTotal', {
+      totalBlogs: this.stats.totalBlogs,
+    });
+  }
+
 
   // 获取当前统计数据
   getStats() {

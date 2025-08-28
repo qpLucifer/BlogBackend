@@ -68,7 +68,7 @@ class SimpleLogger {
             hasRead: false
           }
         });
-        wsManager.pushErrorLog(errorLogDataNum);
+        wsManager.updateErrorLogs(errorLogDataNum);
       }
     } catch (error) {
       logger.error('记录操作日志失败:', error);

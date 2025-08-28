@@ -315,7 +315,7 @@ router.post('/mark-read',
             hasRead: false
           }
         });
-        wsManager.pushErrorLogDecrease(errorLogDataNum);
+        wsManager.updateErrorLogs(errorLogDataNum);
       }
 
       success(res, {}, '日志已标记为已读');
