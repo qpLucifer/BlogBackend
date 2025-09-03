@@ -28,6 +28,7 @@ let tagRouter = require('./routes/tag');
 let uploadRouter = require('./routes/upload');
 let logsRouter = require('./routes/logs');
 let systemRouter = require('./routes/system');
+let dashboardRouter = require('./routes/dashboard');
 
 const { sequelize } = require('./models');
 const cors = require('cors');
@@ -94,6 +95,7 @@ app.use('/api/daySentence', daySentenceRouter);
 app.use('/api/blog', blogRouter);
 app.use('/api/comments', commentRouter);
 app.use('/api/tag', tagRouter);
+app.use('/api/dashboard', dashboardRouter);
 // 上传路由
 app.use('/api/upload', uploadRouter);
 app.use('/api/logs', logsRouter);
