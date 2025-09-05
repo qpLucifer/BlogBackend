@@ -142,6 +142,21 @@ router.post('/add',
       'success'
     );
 
+    // 推送待处理评论数量更新
+    const wsManager = require('../utils/websocket');
+    const pendingCount = await Comment.count({
+      where: { is_replied: false }
+    });
+    wsManager.updatePendingComments(pendingCount);
+
+    // 如果是回复评论，标记原评论为已回复
+    if (parent_id) {
+      await Comment.update(
+        { is_replied: true },
+        { where: { id: parent_id } }
+      );
+    }
+
     success(res, comment, '新增评论成功', 200);
   })
 );
@@ -286,5 +301,64 @@ router.get('/export', checkMenuPermission('评论管理','can_read'), catchAsync
   const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
   res.send(buffer);
 }));
+
+// 获取待处理评论数量
+router.get('/pending-count', 
+  checkMenuPermission('评论管理','can_read'),
+  catchAsync(async (req, res) => {
+    const { Comment } = require('../models');
+    
+    const pendingCount = await Comment.count({
+      where: { 
+        is_replied: false
+      }
+    });
+
+    success(res, { pendingCount }, '获取待处理评论数量成功');
+  })
+);
+
+// 标记评论为已回复
+router.put('/mark-replied/:id',
+  checkMenuPermission('评论管理','can_update'),
+  catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const { Comment } = require('../models');
+
+    const comment = await Comment.findByPk(id);
+    if (!comment) {
+      return fail(res, '评论不存在', 404);
+    }
+
+    await Comment.update(
+      { is_replied: true },
+      { where: { id } }
+    );
+
+    // 记录操作日志
+    await SimpleLogger.logOperation(
+      req.user.id,
+      req.user.username,
+      'update',
+      'comment',
+      id,
+      `标记评论ID:${id}为已回复`,
+      req.ip,
+      req.get('User-Agent'),
+      { comment_id: id, is_replied: true },
+      'operation',
+      'success'
+    );
+
+    // 推送待处理评论数量更新
+    const wsManager = require('../utils/websocket');
+    const pendingCount = await Comment.count({
+      where: { is_replied: false }
+    });
+    wsManager.updatePendingComments(pendingCount);
+
+    success(res, { id, is_replied: true }, '标记评论为已回复成功');
+  })
+);
 
 module.exports = router;

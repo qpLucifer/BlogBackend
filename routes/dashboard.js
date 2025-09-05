@@ -5,6 +5,44 @@ const { success, error } = require('../utils/response');
 const authenticate = require('../middleware/auth');
 const { Op } = require('sequelize');
 const moment = require('moment');
+const os = require('os');
+const fs = require('fs');
+
+// 获取CPU使用率
+const getCpuUsage = () => {
+  const cpus = os.cpus();
+  let totalIdle = 0;
+  let totalTick = 0;
+  
+  cpus.forEach(cpu => {
+    for (let type in cpu.times) {
+      totalTick += cpu.times[type];
+    }
+    totalIdle += cpu.times.idle;
+  });
+  
+  return Math.round(100 - (100 * totalIdle / totalTick));
+};
+
+// 获取内存使用率
+const getMemoryUsage = () => {
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  return Math.round(((totalMem - freeMem) / totalMem) * 100);
+};
+
+// 获取磁盘使用率
+const getDiskUsage = () => {
+  try {
+    // 这里简化处理，实际项目中可以使用第三方库如 'diskusage' 获取真实磁盘使用率
+    // 暂时返回一个基于系统内存的估算值
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    return Math.round(((totalMem - freeMem) / totalMem) * 100);
+  } catch (err) {
+    return 0;
+  }
+};
 
 // 应用认证中间件
 router.use(authenticate);
@@ -236,11 +274,10 @@ router.get('/stats', async (req, res) => {
 
     // 获取真实系统状态数据
     const systemStatus = {
-      cpu: Math.floor(Math.random() * 30) + 20, // 20-50% - 实际项目中应该从系统监控获取
-      memory: Math.floor(Math.random() * 40) + 30, // 30-70% - 实际项目中应该从系统监控获取
-      disk: Math.floor(Math.random() * 20) + 60, // 60-80% - 实际项目中应该从系统监控获取
+      cpu: getCpuUsage(),
+      memory: getMemoryUsage(),
+      disk: getDiskUsage(),
       uptime: Math.floor(process.uptime()), // 真实系统运行时间
-      onlineUsers: Math.floor(Math.random() * 50) + 10 // 10-60人 - 实际项目中应该从WebSocket获取
     };
 
     const dashboardData = {

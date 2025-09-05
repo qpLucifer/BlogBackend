@@ -4,7 +4,8 @@ const getModels = () => {
   const { Blog } = require('../models');
   const { sequelize } = require('../models');
   const { UserLog } = require('../models');
-  return { Blog, sequelize, UserLog };
+  const { Comment } = require('../models');
+  return { Blog, sequelize, UserLog, Comment };
 };
 const wsManager = require('./websocket');
 
@@ -43,7 +44,7 @@ class StatsService {
   // 更新统计数据
   async updateStats(wsManager) {
     try {
-      const { Blog, sequelize, UserLog } = getModels();
+      const { Blog, sequelize, UserLog, Comment } = getModels();
       // 获取博客总数和总访问量
       const blogStats = await Blog.findOne({
         attributes: [
@@ -68,6 +69,15 @@ class StatsService {
       });
       // 更新错误日志数量
       wsManager.updateErrorLogs(errorLogDataNum);
+
+      // 获取待处理评论数量
+      const pendingCommentsCount = await Comment.count({
+        where: { 
+          is_replied: false
+        }
+      });
+      // 更新待处理评论数量
+      wsManager.updatePendingComments(pendingCommentsCount);
 
     } catch (error) {
       console.error('更新统计数据失败:', error);

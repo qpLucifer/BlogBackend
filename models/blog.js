@@ -144,6 +144,7 @@ const createBlogModels = (sequelize) => {
       user_id: { type: DataTypes.INTEGER, allowNull: false },
       content: { type: DataTypes.TEXT, allowNull: false },
       parent_id: { type: DataTypes.INTEGER, allowNull: true }, // 楼中楼
+      is_replied: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false }, // 是否已回复
     },
     {
       tableName: "blog_comments",
@@ -174,6 +175,10 @@ const createBlogModels = (sequelize) => {
         {
           fields: ['created_at'], // 创建时间索引
           name: 'comment_created_idx'
+        },
+        {
+          fields: ['is_replied'], // 回复状态索引
+          name: 'comment_replied_idx'
         }
       ]
     }

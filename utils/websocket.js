@@ -106,6 +106,12 @@ class WebSocketManager {
     this.broadcast('stats:errorLogs', this.stats.errorLogs);
   }
 
+  // 更新待处理评论数量
+  updatePendingComments(pendingCommentsCount) {
+    this.stats.pendingComments = pendingCommentsCount;
+    this.broadcast('stats:pendingComments', this.stats.pendingComments);
+  }
+
   // 广播消息给所有连接的用户
   broadcast(event, data) {
     if (this.io) {
